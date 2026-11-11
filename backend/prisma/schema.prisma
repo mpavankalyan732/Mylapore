@@ -1,0 +1,244 @@
+// PostgreSQL is the system of record for transactional data.
+// All money is stored as integer paise (INR * 100) to avoid float errors.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Language {
+  EN
+  TE
+  TA
+  KN
+  HI
+}
+
+enum FulfilmentType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT // online order waiting for a verified webhook; NEVER visible to kitchen
+  CONFIRMED // paid (or approved COD) -> visible to kitchen
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+  PAYMENT_FAILED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  ONLINE
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUND_REQUIRED
+  REFUNDED
+  COD_PENDING
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+  DEAD
+}
+
+enum ReservationStatus {
+  REQUESTED
+  CONFIRMED
+  CANCELLED
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  slug      String     @unique
+  names     Json // { en, te, ta, kn, hi }
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id           String      @id @default(uuid())
+  slug         String      @unique
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id])
+  names        Json // { en, te, ta, kn, hi }
+  descriptions Json
+  pricePaise   Int // CONFIGURABLE: demo values until management confirms
+  imageUrl     String
+  isAvailable  Boolean     @default(true)
+  isJain       Boolean     @default(false)
+  isSpicy      Boolean     @default(false)
+  isBestseller Boolean     @default(false)
+  isVegan      Boolean     @default(false)
+  cuisine      String? // SOUTH_INDIAN | NORTH_INDIAN | CHINESE | OTHER
+  tags         String[]    @default([]) // south-indian-rice | north-indian-roti | idli-dosa
+  ingredients  String? // DRAFT until the kitchen confirms
+  allergens    String[]    @default([]) // DRAFT until the kitchen confirms
+  nutrition    Json? // { servingSize, calories, ... } left empty until real values exist
+  spiceLevel   String? // Mild | Medium | Spicy
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  orderItems   OrderItem[]
+
+  @@index([categoryId, isAvailable])
+}
+
+model Customer {
+  id           String        @id @default(uuid())
+  phone        String        @unique // normalised 10-digit Indian mobile
+  name         String
+  email        String?
+  language     Language      @default(EN)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  reservations Reservation[]
+}
+
+model Order {
+  id               String         @id @default(uuid())
+  orderNumber      String         @unique
+  idempotencyKey   String         @unique
+  lookupToken      String // guest access secret for order tracking
+  customerId       String
+  customer         Customer       @relation(fields: [customerId], references: [id])
+  userId           String?
+  user             User?          @relation(fields: [userId], references: [id])
+  fulfilment       FulfilmentType
+  status           OrderStatus
+  paymentMethod    PaymentMethod
+  paymentStatus    PaymentStatus
+  subtotalPaise    Int
+  taxPaise         Int
+  deliveryFeePaise Int
+  totalPaise       Int
+  notes            String?
+  deliveryAddress  Json?
+  deliveryPincode  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  confirmedAt      DateTime?
+  items            OrderItem[]
+  payments         Payment[]
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id             String   @id @default(uuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId     String
+  menuItem       MenuItem @relation(fields: [menuItemId], references: [id])
+  nameSnapshot   String // price + name snapshot at order time
+  unitPricePaise Int
+  quantity       Int
+  lineTotalPaise Int
+  notes          String?
+
+  @@index([orderId])
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  orderId          String
+  order            Order         @relation(fields: [orderId], references: [id])
+  provider         String // razorpay | mock
+  reference        String // gateway payment-link / session id
+  gatewayPaymentId String?
+  amountPaise      Int
+  status           PaymentStatus @default(PENDING)
+  checkoutUrl      String?
+  expiresAt        DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([provider, reference])
+  @@index([orderId])
+}
+
+model WebhookEvent {
+  id          String    @id @default(uuid())
+  provider    String
+  eventId     String
+  type        String
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@unique([provider, eventId]) // duplicate-webhook guard
+}
+
+model OutboxEvent {
+  id            String       @id @default(uuid())
+  aggregateType String // ORDER | RESERVATION | CUSTOMER
+  aggregateId   String
+  eventType     String
+  payload       Json
+  status        OutboxStatus @default(PENDING)
+  attempts      Int          @default(0)
+  nextAttemptAt DateTime     @default(now())
+  lastError     String?
+  createdAt     DateTime     @default(now())
+  processedAt   DateTime?
+
+  @@index([status, nextAttemptAt])
+  @@index([aggregateType, aggregateId])
+}
+
+model Reservation {
+  id         String            @id @default(uuid())
+  customerId String
+  customer   Customer          @relation(fields: [customerId], references: [id])
+  partySize  Int
+  startsAt   DateTime
+  notes      String?
+  status     ReservationStatus @default(REQUESTED)
+  createdAt  DateTime          @default(now())
+
+  @@index([startsAt])
+}
+
+model User {
+  id           String   @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String?
+  googleId     String?  @unique
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+model LoginCode {
+  id         String    @id @default(uuid())
+  identifier String // normalised email or 10-digit phone
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([identifier, createdAt])
+}

@@ -1,0 +1,67 @@
+# Render Blueprint: PostgreSQL + NestJS API + Next.js site.
+# Secrets marked sync:false are entered in the Render dashboard (never committed).
+databases:
+  - name: mylapore-db
+    plan: free
+    databaseName: vegrestaurant
+    user: mylapore
+
+services:
+  - type: web
+    name: mylapore-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build && npx prisma migrate deploy && npm run seed
+    startCommand: node dist/main.js
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mylapore-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STAFF_API_KEY
+        generateValue: true
+      - key: AGENT_API_KEY
+        generateValue: true
+      - key: MOCK_WEBHOOK_SECRET
+        generateValue: true
+      - key: SALESFORCE_INBOUND_KEY
+        generateValue: true
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: COD_ENABLED
+        value: "true"
+      - key: TAX_PERCENT
+        value: "0"
+      - key: SERVICE_PINCODES
+        value: 517501,517502,517503
+      # Set to the frontend's public URL after the first deploy (see DEPLOY.md)
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PUBLIC_ASSET_URL
+        sync: false
+
+  - type: web
+    name: mylapore-web
+    runtime: node
+    rootDir: frontend
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npx next start -p $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      # Set to the API's public URL after the first deploy (see DEPLOY.md)
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_WS_URL
+        sync: false
