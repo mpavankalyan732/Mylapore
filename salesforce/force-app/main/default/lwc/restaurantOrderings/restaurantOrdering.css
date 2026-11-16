@@ -1,0 +1,153 @@
+.container {
+    padding: 20px;
+}
+
+.heading {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.heading h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #222;
+}
+
+.heading p {
+    color: #777;
+    margin-top: 5px;
+}
+
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.categories button {
+    border: 1px solid #ddd;
+    background: white;
+    padding: 9px 17px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.categories button:hover {
+    background: #0176d3;
+    color: white;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.food-card {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.food-image {
+    height: 125px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #fff4e8;
+    font-size: 55px;
+}
+
+.food-details {
+    padding: 15px;
+}
+
+.food-details h2 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.food-details p {
+    font-size: 13px;
+    color: #777;
+    min-height: 35px;
+    margin-bottom: 10px;
+}
+
+.price {
+    font-size: 19px;
+    font-weight: bold;
+    color: #16803c;
+    margin-bottom: 12px;
+}
+
+.cart-section {
+    margin-top: 30px;
+    padding: 20px;
+    border-radius: 12px;
+    background: #f8f9fa;
+}
+
+.cart-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.cart-item p {
+    color: #777;
+    font-size: 13px;
+}
+
+.quantity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quantity span {
+    font-weight: bold;
+}
+
+.total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 15px 0;
+}
+
+.total lightning-formatted-number {
+    font-size: 22px;
+    font-weight: bold;
+    color: #16803c;
+}
+
+.pay-button {
+    display: block;
+    margin-top: 15px;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    .cart-item {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}

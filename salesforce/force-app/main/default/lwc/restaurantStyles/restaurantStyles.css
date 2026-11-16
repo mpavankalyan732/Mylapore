@@ -1,0 +1,79 @@
+/*
+ * Shared styles for every restaurant component. Import with:  @import 'c/restaurantStyles';
+ * Self-contained (no dependency on SLDS) so the Agentforce renderers also look right in Enhanced Chat,
+ * and uses only CSS custom properties with fallbacks so it adapts to Salesforce themes.
+ */
+:host {
+    --r-accent: #b83a1c;
+    --r-accent-dark: #962d14;
+    --r-green: #2e7d32;
+    --r-border: #dddbda;
+    --r-muted: #5c5c5c;
+    --r-bg: #ffffff;
+    --r-soft: #f7f3ee;
+    --r-danger: #ba0517;
+    display: block;
+    font-family: var(--lwc-fontFamily, 'Salesforce Sans', Arial, sans-serif);
+    color: #181818;
+}
+
+.card {
+    background: var(--r-bg);
+    border: 1px solid var(--r-border);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+}
+
+.muted { color: var(--r-muted); font-size: 0.8125rem; }
+.small { font-size: 0.75rem; }
+.strong { font-weight: 700; }
+.price { font-weight: 700; font-variant-numeric: tabular-nums; }
+.row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.spread { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.stack > * + * { margin-top: 0.5rem; }
+
+.btn {
+    border: 1px solid var(--r-accent);
+    background: var(--r-accent);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.4rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+.btn:hover:not(:disabled) { background: var(--r-accent-dark); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-outline { background: transparent; color: var(--r-accent); }
+.btn-outline:hover:not(:disabled) { background: #fbeee9; }
+.btn-danger { background: var(--r-danger); border-color: var(--r-danger); }
+.btn-link { background: none; border: 0; color: var(--r-accent); cursor: pointer; padding: 0; font-size: 0.8125rem; text-decoration: underline; }
+a.btn { display: inline-block; text-decoration: none; text-align: center; }
+
+.badge { display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+.badge-good { background: #e3f3e4; color: #1d5a22; }
+.badge-wait { background: #fdf0d5; color: #7a4b00; }
+.badge-bad { background: #fde8e8; color: #8a0f0f; }
+.badge-veg { border: 1px solid var(--r-green); color: var(--r-green); background: #fff; }
+
+.alert { border-radius: 0.5rem; padding: 0.6rem 0.8rem; font-size: 0.8125rem; }
+.alert-error { background: #fde8e8; color: #8a0f0f; border: 1px solid #f3b8b8; }
+.alert-info { background: #eef4ff; color: #1b3f7a; border: 1px solid #c9dafc; }
+.alert-ok { background: #e3f3e4; color: #1d5a22; border: 1px solid #b6dcb8; }
+
+.bill { width: 100%; font-size: 0.8125rem; }
+.bill-row { display: flex; justify-content: space-between; padding: 0.15rem 0; font-variant-numeric: tabular-nums; }
+.bill-total { border-top: 1px solid var(--r-border); margin-top: 0.25rem; padding-top: 0.35rem; font-weight: 700; font-size: 0.9375rem; }
+
+/* order timeline */
+.timeline { list-style: none; margin: 0; padding: 0; }
+.step { position: relative; padding: 0 0 0.9rem 1.7rem; color: var(--r-muted); font-size: 0.8125rem; }
+.step::before { content: ''; position: absolute; left: 0; top: 0.1rem; width: 0.9rem; height: 0.9rem; border-radius: 50%; border: 2px solid var(--r-border); background: #fff; }
+.step::after { content: ''; position: absolute; left: 0.5rem; top: 1.05rem; bottom: 0; width: 2px; background: var(--r-border); }
+.step:last-child::after { display: none; }
+.step-done { color: #181818; font-weight: 600; }
+.step-done::before { background: var(--r-green); border-color: var(--r-green); }
+.step-done::after { background: var(--r-green); }
+.step-current::before { box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.2); }
+
+.thumb { width: 3rem; height: 3rem; border-radius: 0.5rem; object-fit: cover; flex: none; background: var(--r-soft); }

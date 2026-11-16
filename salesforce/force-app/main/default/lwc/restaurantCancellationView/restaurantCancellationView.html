@@ -1,0 +1,18 @@
+<template>
+    <template lwc:if={cancelled}>
+        <div class="alert alert-ok" role="status">
+            <p class="strong">Order {value.orderNumber} is cancelled.</p>
+            <p>{value.message}</p>
+            <template lwc:if={value.refundRequired}>
+                <p>A refund for your online payment will be arranged by the restaurant team.</p>
+            </template>
+        </div>
+    </template>
+    <template lwc:else>
+        <div class="alert alert-error" role="alert">
+            <p class="strong">The order was not cancelled.</p>
+            <p>{value.message}</p>
+            <template lwc:if={value.status}><p class="small">Current status: {statusText}</p></template>
+        </div>
+    </template>
+</template>

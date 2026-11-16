@@ -1,0 +1,5 @@
+{
+  "title": "Restaurant Order Result",
+  "description": "Result of placing an order",
+  "lightning:type": "@apexClassType/c__RestaurantOrderResponse"
+}

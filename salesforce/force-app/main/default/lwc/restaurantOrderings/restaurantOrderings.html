@@ -1,0 +1,126 @@
+<template>
+    <lightning-card title="Mylapore Restaurant" icon-name="utility:food">
+        <div class="container">
+
+            <div class="heading">
+                <h1>Our Restaurant Menu</h1>
+                <p>Choose your favourite food and enjoy!</p>
+            </div>
+
+            <!-- Categories -->
+            <div class="categories">
+                <template for:each={categories} for:item="category">
+                    <button
+                        key={category}
+                        class={category}
+                        data-category={category}
+                        onclick={handleCategory}>
+                        {category}
+                    </button>
+                </template>
+            </div>
+
+            <!-- Menu Items -->
+            <div class="menu-grid">
+                <template for:each={filteredItems} for:item="item">
+                    <div class="food-card" key={item.id}>
+
+                        <div class="food-image">
+                            <span>{item.emoji}</span>
+                        </div>
+
+                        <div class="food-details">
+                            <h2>{item.name}</h2>
+                            <p>{item.description}</p>
+
+                            <div class="price">
+                                <lightning-formatted-number
+                                    value={item.price}
+                                    format-style="currency"
+                                    currency-code="INR">
+                                </lightning-formatted-number>
+                            </div>
+
+                            <lightning-button
+                                label="Add to Cart"
+                                variant="brand"
+                                data-id={item.id}
+                                onclick={handleAddToCart}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Shopping Cart -->
+            <template if:true={hasCart}>
+                <div class="cart-section">
+
+                    <h2>Your Shopping Cart</h2>
+
+                    <template for:each={cart} for:item="item">
+                        <div class="cart-item" key={item.id}>
+
+                            <div>
+                                <strong>{item.name}</strong>
+                                <p>₹{item.price} × {item.quantity}</p>
+                            </div>
+
+                            <div class="quantity">
+                                <lightning-button-icon
+                                    icon-name="utility:dash"
+                                    alternative-text="Decrease"
+                                    data-id={item.id}
+                                    onclick={handleDecrease}>
+                                </lightning-button-icon>
+
+                                <span>{item.quantity}</span>
+
+                                <lightning-button-icon
+                                    icon-name="utility:add"
+                                    alternative-text="Increase"
+                                    data-id={item.id}
+                                    onclick={handleIncrease}>
+                                </lightning-button-icon>
+
+                                <lightning-button-icon
+                                    icon-name="utility:delete"
+                                    alternative-text="Remove"
+                                    data-id={item.id}
+                                    onclick={handleRemove}>
+                                </lightning-button-icon>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="total">
+                        <h2>Total Amount</h2>
+
+                        <lightning-formatted-number
+                            value={cartTotal}
+                            format-style="currency"
+                            currency-code="INR">
+                        </lightning-formatted-number>
+                    </div>
+
+                    <lightning-button
+                        label="Pay Now"
+                        variant="brand"
+                        icon-name="utility:checkout"
+                        disabled={isPaying}
+                        onclick={handlePayment}
+                        class="pay-button">
+                    </lightning-button>
+
+                    <template if:true={isPaying}>
+                        <lightning-spinner
+                            alternative-text="Creating payment">
+                        </lightning-spinner>
+                    </template>
+
+                </div>
+            </template>
+
+        </div>
+    </lightning-card>
+</template>

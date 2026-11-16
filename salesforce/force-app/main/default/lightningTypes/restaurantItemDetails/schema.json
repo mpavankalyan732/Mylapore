@@ -1,0 +1,5 @@
+{
+  "title": "Restaurant Item Details",
+  "description": "Details of one dish",
+  "lightning:type": "@apexClassType/c__RestaurantItemDetails"
+}

@@ -1,0 +1,23 @@
+@import 'c/restaurantStyles';
+.list { list-style: none; margin: 0; padding: 0; }
+.dish { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--r-border); }
+.dish:first-child { border-top: 0; }
+.grow { flex: 1; min-width: 0; }
+.thumb { width: 4rem; height: 4rem; }
+.thumb-empty { background: var(--r-soft); }
+.cta { margin-top: 0.5rem; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--r-accent); border-radius: 999px; overflow: hidden; flex: none; }
+.step-btn { border: 0; background: transparent; color: var(--r-accent); width: 1.9rem; height: 1.9rem; font-size: 1rem; font-weight: 700; cursor: pointer; }
+.step-btn:hover:not(:disabled) { background: #fbeee9; }
+.step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.qty { min-width: 1.4rem; text-align: center; font-weight: 700; font-size: 0.8125rem; }
+.field { display: block; font-size: 0.8125rem; font-weight: 600; border: 0; padding: 0; margin: 0; }
+.field legend { padding: 0; margin-bottom: 0.25rem; }
+.field input[type='text'], .field input[type='tel'] {
+    display: block; width: 100%; box-sizing: border-box; margin-top: 0.2rem; padding: 0.45rem 0.6rem;
+    border: 1px solid var(--r-border); border-radius: 0.5rem; font-size: 0.875rem; font-weight: 400;
+}
+.field input.bad { border-color: var(--r-danger); }
+.err { display: block; color: var(--r-danger); font-weight: 400; font-size: 0.75rem; margin-top: 0.15rem; }
+.opt { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem; margin-top: 0.3rem; border: 1px solid var(--r-border); border-radius: 0.5rem; font-weight: 400; cursor: pointer; }
+.opt-on { border-color: var(--r-accent); background: #fbeee9; }

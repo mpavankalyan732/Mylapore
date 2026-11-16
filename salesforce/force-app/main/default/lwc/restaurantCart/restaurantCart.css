@@ -1,0 +1,14 @@
+@import 'c/restaurantStyles';
+
+.heading { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.lines { list-style: none; margin: 0; padding: 0; }
+.line { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--r-border); }
+.line:first-child { border-top: 0; }
+.info { flex: 1; min-width: 0; }
+.side { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
+.notes { display: block; margin-top: 0.3rem; }
+.notes input { width: 100%; border: 1px solid var(--r-border); border-radius: 0.4rem; padding: 0.25rem 0.4rem; font: inherit; font-size: 0.8125rem; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--r-accent); border-radius: 999px; overflow: hidden; }
+.stepper button { width: 1.8rem; height: 1.8rem; border: 0; background: var(--r-accent); color: #fff; font-size: 1.1rem; cursor: pointer; }
+.stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+.stepper output { min-width: 1.8rem; text-align: center; font-weight: 700; }

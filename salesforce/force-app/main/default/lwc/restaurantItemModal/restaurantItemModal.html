@@ -1,0 +1,58 @@
+<template>
+    <div class="backdrop" onclick={handleBackdrop}>
+        <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="item-title" onkeydown={handleKeydown} onclick={stop}>
+            <button type="button" class="close" onclick={handleClose} aria-label="Close" data-focus>×</button>
+            <template lwc:if={imageUrl}>
+                <img class="hero" src={imageUrl} alt={item.name} />
+            </template>
+            <div class="content stack">
+                <div class="spread">
+                    <h2 id="item-title" class="title">{item.name}</h2>
+                    <span class="price big">{priceText}</span>
+                </div>
+                <div class="row">
+                    <span class="badge badge-veg">Vegetarian</span>
+                    <template lwc:if={item.isVegan}><span class="badge badge-veg">Vegan</span></template>
+                    <template lwc:if={item.isJain}><span class="badge badge-veg">Jain</span></template>
+                    <template lwc:if={item.spiceLevel}><span class="badge badge-wait">{item.spiceLevel}</span></template>
+                    <template lwc:if={unavailable}><span class="badge badge-bad">Currently unavailable</span></template>
+                    <template lwc:if={loading}><span class="muted small">Checking latest details…</span></template>
+                </div>
+                <p>{item.description}</p>
+                <template lwc:if={item.ingredients}><p class="muted"><span class="strong">Ingredients:</span> {item.ingredients}</p></template>
+                <template lwc:if={allergenText}><p class="muted"><span class="strong">Contains:</span> {allergenText}</p></template>
+                <template lwc:if={nutritionSummary}><p class="muted"><span class="strong">Nutrition:</span> {nutritionSummary}</p></template>
+                <p class="muted small">{notice}</p>
+                <template lwc:if={error}><div class="alert alert-error" role="alert">{error}</div></template>
+
+                <template for:each={customizations} for:item="group">
+                    <fieldset key={group.id} class="group">
+                        <legend>{group.name}<template lwc:if={group.isRequired}> (required)</template></legend>
+                        <template for:each={group.options} for:item="opt">
+                            <label key={opt.id} class="opt">
+                                <input type="radio" name={group.id} value={opt.id} data-group={group.id} data-label={opt.label} onchange={handleOption} />
+                                {opt.label}
+                            </label>
+                        </template>
+                    </fieldset>
+                </template>
+
+                <template lwc:if={allowsNotes}>
+                    <label class="notes">
+                        <span class="strong">Special instructions (optional)</span>
+                        <textarea rows="2" maxlength="180" placeholder="For example: less spicy, no onion" onchange={handleNotes}></textarea>
+                    </label>
+                </template>
+
+                <div class="spread">
+                    <div class="stepper" role="group" aria-label="Quantity">
+                        <button type="button" onclick={handleMinus} aria-label="Decrease quantity" disabled={minusDisabled}>−</button>
+                        <output aria-live="polite">{quantity}</output>
+                        <button type="button" onclick={handlePlus} aria-label="Increase quantity" disabled={plusDisabled}>+</button>
+                    </div>
+                    <button type="button" class="btn" onclick={handleAdd} disabled={addDisabled}>{addLabel}</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</template>

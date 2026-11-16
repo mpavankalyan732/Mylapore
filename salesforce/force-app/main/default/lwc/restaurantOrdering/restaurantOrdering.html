@@ -1,0 +1,95 @@
+<template>
+    <div class="app">
+        <header class="top">
+            <div class="brand">
+                <h1 class="brand-title">{heading}</h1>
+                <p class="muted">100% pure vegetarian · order online</p>
+            </div>
+            <nav class="nav" aria-label="Sections">
+                <button type="button" class={menuTabClass} onclick={showMenu} aria-current={menuCurrent}>Menu</button>
+                <button type="button" class={ordersTabClass} onclick={showOrders} aria-current={ordersCurrent}>My orders</button>
+                <button type="button" class={cartTabClass} onclick={showCart} aria-current={cartCurrent}>
+                    Cart<template lwc:if={hasCart}> · {cartCount} · {cartTotalText}</template>
+                </button>
+            </nav>
+        </header>
+
+        <!-- ============================== MENU -->
+        <template lwc:if={isMenuView}>
+            <div class="search">
+                <label class="sr-only" for="menu-search">Search the menu</label>
+                <input id="menu-search" type="search" placeholder="Search dishes, e.g. dosa" value={searchText} oninput={handleSearch} />
+            </div>
+
+            <template lwc:if={loading}>
+                <div class="state" role="status"><span class="spinner" aria-hidden="true"></span> Loading the menu…</div>
+            </template>
+            <template lwc:elseif={error}>
+                <div class="alert alert-error" role="alert">
+                    <p>{error}</p>
+                    <button type="button" class="btn btn-outline" onclick={handleRetry}>Try again</button>
+                </div>
+            </template>
+            <template lwc:else>
+                <div class="pills" role="group" aria-label="Categories">
+                    <template for:each={categoryPills} for:item="pill">
+                        <button key={pill.id} type="button" class={pill.cssClass} data-id={pill.id} aria-pressed={pill.pressed} onclick={handleCategory}>{pill.label}</button>
+                    </template>
+                </div>
+                <template lwc:if={hasSubcategories}>
+                    <div class="pills sub" role="group" aria-label="Subcategories">
+                        <template for:each={subcategoryPills} for:item="pill">
+                            <button key={pill.id} type="button" class={pill.cssClass} data-id={pill.id} aria-pressed={pill.pressed} onclick={handleSubcategory}>{pill.label}</button>
+                        </template>
+                    </div>
+                </template>
+
+                <p class="muted small" aria-live="polite">{resultsText}</p>
+
+                <template lwc:if={isEmpty}>
+                    <div class="state">No dishes match your search. Try a different word or category.</div>
+                </template>
+                <div class="grid">
+                    <template for:each={visibleItems} for:item="row">
+                        <c-restaurant-item-card key={row.key} item={row.item} quantity={row.quantity} onview={handleView} onadd={handleAdd} onincrease={handleIncrease} ondecrease={handleDecrease}></c-restaurant-item-card>
+                    </template>
+                </div>
+                <template lwc:if={hasMore}>
+                    <div class="more"><button type="button" class="btn btn-outline" onclick={handleShowMore}>Show more dishes</button></div>
+                </template>
+            </template>
+        </template>
+
+        <!-- ============================== CART -->
+        <template lwc:if={isCartView}>
+            <c-restaurant-cart lines={cart} config={config} onincrease={handleIncrease} ondecrease={handleDecrease} onremove={handleRemove} onnotes={handleNotes} oncheckout={handleCheckout} oncontinueshopping={showMenu}></c-restaurant-cart>
+        </template>
+
+        <!-- ============================== CHECKOUT -->
+        <template lwc:if={isCheckoutView}>
+            <c-restaurant-checkout lines={cart} config={config} onback={showCart} onplaced={handlePlaced} onunavailable={handleUnavailable}></c-restaurant-checkout>
+        </template>
+
+        <!-- ============================== CONFIRMATION -->
+        <template lwc:if={isConfirmationView}>
+            <section class="stack" aria-label="Order confirmation">
+                <div class="alert alert-ok" role="status"><span class="strong">Thank you!</span> Your order was received by the restaurant.</div>
+                <c-restaurant-order-result value={lastOrder}></c-restaurant-order-result>
+                <div class="row">
+                    <button type="button" class="btn" onclick={handleTrack}>Track this order</button>
+                    <button type="button" class="btn btn-outline" onclick={showMenu}>Order more</button>
+                </div>
+            </section>
+        </template>
+
+        <!-- ============================== MY ORDERS -->
+        <template lwc:if={isOrdersView}>
+            <c-restaurant-order-lookup order-number={lookupOrderNumber} phone={lookupPhone} auto-lookup={autoLookup} onback={showMenu}></c-restaurant-order-lookup>
+        </template>
+
+        <!-- ============================== ITEM DETAIL -->
+        <template lwc:if={detailItem}>
+            <c-restaurant-item-modal item={detailItem} details={detailExtra} loading={detailLoading} error={detailError} onclose={handleCloseDetail} onaddtocart={handleAddFromModal}></c-restaurant-item-modal>
+        </template>
+    </div>
+</template>

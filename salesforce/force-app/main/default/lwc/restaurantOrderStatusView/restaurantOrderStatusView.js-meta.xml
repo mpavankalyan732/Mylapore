@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Restaurant Order Status</masterLabel>
+    <description>Agentforce output renderer for the restaurantOrderStatus Lightning Type.</description>
+    <targets>
+        <target>lightning__AgentforceOutput</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__AgentforceOutput">
+            <sourceType name="c__restaurantOrderStatus"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

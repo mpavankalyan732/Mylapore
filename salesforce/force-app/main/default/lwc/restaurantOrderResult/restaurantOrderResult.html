@@ -1,0 +1,40 @@
+<template>
+    <template lwc:if={failed}>
+        <div class="alert alert-error" role="alert">
+            <p class="strong">The order was not placed.</p>
+            <p>{value.message}</p>
+        </div>
+    </template>
+    <template lwc:else>
+        <div class="card stack">
+            <div class="spread">
+                <span class="strong">Order {value.orderNumber}</span>
+                <span class={badgeClass}>{statusText}</span>
+            </div>
+            <template lwc:if={value.confirmation}><p class="muted">{value.confirmation}</p></template>
+        <ul class="stack" style="list-style:none;margin:0;padding:0">
+            <template for:each={lines} for:item="line">
+                <li key={line.key} class="spread">
+                    <span>{line.text}<template lwc:if={line.notes}><span class="muted small"> ({line.notes})</span></template></span>
+                    <span class="price">{line.totalText}</span>
+                </li>
+            </template>
+        </ul>
+        <div class="bill">
+            <div class="bill-row"><span>Subtotal</span><span>{subtotalText}</span></div>
+            <template lwc:if={showTax}><div class="bill-row"><span>Tax</span><span>{taxText}</span></div></template>
+            <template lwc:if={showDeliveryFee}><div class="bill-row"><span>Delivery fee</span><span>{deliveryFeeText}</span></div></template>
+            <div class="bill-row bill-total"><span>Total</span><span>{totalText}</span></div>
+        </div>
+            <template lwc:if={payUrl}>
+                <div class="alert alert-info">
+                    Your order is sent to the kitchen once the online payment is confirmed.
+                </div>
+                <a class="btn" href={payUrl} target="_blank" rel="noopener noreferrer">Pay now</a>
+            </template>
+            <template lwc:if={trackUrl}>
+                <a class="btn-link" href={trackUrl} target="_blank" rel="noopener noreferrer">Track this order online</a>
+            </template>
+        </div>
+    </template>
+</template>

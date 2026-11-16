@@ -1,0 +1,28 @@
+<template>
+    <template lwc:if={failed}>
+        <div class="alert alert-error" role="alert">{value.message}</div>
+    </template>
+    <template lwc:else>
+        <div class="card stack">
+            <template lwc:if={imageUrl}>
+                <img class="hero" src={imageUrl} alt={item.name} loading="lazy" />
+            </template>
+            <div class="spread">
+                <span class="strong">{item.name}</span>
+                <span class="price">{priceText}</span>
+            </div>
+            <div class="row">
+                <span class="badge badge-veg">Vegetarian</span>
+                <template lwc:if={item.isVegan}><span class="badge badge-veg">Vegan</span></template>
+                <template lwc:if={item.isJain}><span class="badge badge-veg">Jain</span></template>
+                <template lwc:if={item.spiceLevel}><span class="badge badge-wait">{item.spiceLevel}</span></template>
+                <template lwc:if={unavailable}><span class="badge badge-bad">Currently unavailable</span></template>
+            </div>
+            <p>{item.description}</p>
+            <template lwc:if={item.ingredients}><p class="muted"><span class="strong">Ingredients:</span> {item.ingredients}</p></template>
+            <template lwc:if={allergenText}><p class="muted"><span class="strong">Contains:</span> {allergenText}</p></template>
+            <template lwc:if={value.nutritionSummary}><p class="muted"><span class="strong">Nutrition:</span> {value.nutritionSummary}</p></template>
+            <p class="muted small">{value.notice}</p>
+        </div>
+    </template>
+</template>

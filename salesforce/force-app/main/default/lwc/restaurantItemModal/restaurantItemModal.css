@@ -1,0 +1,18 @@
+@import 'c/restaurantStyles';
+
+.backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.dialog { position: relative; background: #fff; border-radius: 1rem; width: min(34rem, 100%); max-height: 92vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); }
+.close { position: absolute; right: 0.6rem; top: 0.6rem; width: 2rem; height: 2rem; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 1.25rem; cursor: pointer; line-height: 1; }
+.hero { width: 100%; max-height: 15rem; object-fit: cover; display: block; border-radius: 1rem 1rem 0 0; }
+.content { padding: 1rem; }
+.title { margin: 0; font-size: 1.25rem; font-weight: 700; }
+.big { font-size: 1.125rem; color: var(--r-accent); }
+.group { border: 1px solid var(--r-border); border-radius: 0.5rem; padding: 0.5rem 0.75rem; }
+.group legend { font-weight: 700; font-size: 0.8125rem; padding: 0 0.25rem; }
+.opt { display: flex; gap: 0.5rem; align-items: center; padding: 0.15rem 0; font-size: 0.875rem; }
+.notes { display: block; }
+.notes textarea { width: 100%; margin-top: 0.25rem; border: 1px solid var(--r-border); border-radius: 0.5rem; padding: 0.4rem 0.5rem; font: inherit; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--r-accent); border-radius: 999px; overflow: hidden; }
+.stepper button { width: 2.1rem; height: 2.1rem; border: 0; background: var(--r-accent); color: #fff; font-size: 1.2rem; cursor: pointer; }
+.stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+.stepper output { min-width: 2.1rem; text-align: center; font-weight: 700; }
