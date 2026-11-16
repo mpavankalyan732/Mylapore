@@ -60,4 +60,4 @@ Menu items and prices (seed is DEMO data), restaurant name (`NEXT_PUBLIC_RESTAUR
 ## Not built yet (roadmap)
 OTP login + JWT/RBAC (staff currently use a shared key), Redis adapter for multi-instance sockets, BullMQ, refunds API, reconciliation job, Agentforce chat widget, catering/loyalty, Testcontainers suite, CI/CD, observability.
 Cost dependencies: Razorpay/Cashfree fees, SMS/WhatsApp provider, Salesforce licences, India hosting (e.g. AWS Mumbai / Azure Central India).
-    
+        
