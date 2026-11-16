@@ -1,0 +1,5 @@
+{
+  "title": "Restaurant Reservation",
+  "description": "A table reservation",
+  "lightning:type": "@apexClassType/c__RestaurantReservationResponse"
+}

@@ -1,0 +1,21 @@
+<template>
+    <template lwc:if={failed}>
+        <div class="alert alert-error" role="alert">{value.message}</div>
+    </template>
+    <template lwc:else>
+        <div class="card stack">
+            <div class="spread">
+                <span class="strong">Table reservation</span>
+                <span class={badgeClass}>{statusText}</span>
+            </div>
+            <p class="muted">{value.statusMessage}</p>
+            <div class="bill">
+                <div class="bill-row"><span>When</span><span>{whenText}</span></div>
+                <div class="bill-row"><span>Guests</span><span>{value.partySize}</span></div>
+                <template lwc:if={value.customerName}><div class="bill-row"><span>Name</span><span>{value.customerName}</span></div></template>
+                <template lwc:if={value.notes}><div class="bill-row"><span>Notes</span><span>{value.notes}</span></div></template>
+            </div>
+            <p class="muted small">Reservation id: {value.reservationId}</p>
+        </div>
+    </template>
+</template>

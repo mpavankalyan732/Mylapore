@@ -1,0 +1,5 @@
+{
+  "title": "Restaurant Cancellation Result",
+  "description": "Result of cancelling an order",
+  "lightning:type": "@apexClassType/c__RestaurantCancellationResponse"
+}

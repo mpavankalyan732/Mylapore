@@ -1,0 +1,40 @@
+<template>
+    <template lwc:if={failed}>
+        <div class="alert alert-error" role="alert">{value.message}</div>
+    </template>
+    <template lwc:else>
+        <div class="card stack">
+            <div class="spread">
+                <span class="strong">Order {value.orderNumber}</span>
+                <span class={badgeClass}>{statusText}</span>
+            </div>
+            <p class="muted">{value.statusMessage}</p>
+            <template lwc:if={placedAt}><p class="muted small">Placed {placedAt} · {value.fulfilment} · {value.paymentMethod}</p></template>
+            <template lwc:if={hasTimeline}>
+                <ol class="timeline">
+                    <template for:each={steps} for:item="step">
+                        <li key={step.key} class={step.cssClass}>{step.label}</li>
+                    </template>
+                </ol>
+            </template>
+        <ul class="stack" style="list-style:none;margin:0;padding:0">
+            <template for:each={lines} for:item="line">
+                <li key={line.key} class="spread">
+                    <span>{line.text}<template lwc:if={line.notes}><span class="muted small"> ({line.notes})</span></template></span>
+                    <span class="price">{line.totalText}</span>
+                </li>
+            </template>
+        </ul>
+        <div class="bill">
+            <div class="bill-row"><span>Subtotal</span><span>{subtotalText}</span></div>
+            <template lwc:if={showTax}><div class="bill-row"><span>Tax</span><span>{taxText}</span></div></template>
+            <template lwc:if={showDeliveryFee}><div class="bill-row"><span>Delivery fee</span><span>{deliveryFeeText}</span></div></template>
+            <div class="bill-row bill-total"><span>Total</span><span>{totalText}</span></div>
+        </div>
+            <template lwc:if={payUrl}>
+                <a class="btn" href={payUrl} target="_blank" rel="noopener noreferrer">Complete payment</a>
+            </template>
+            <p class="muted small">{value.cancellableReason}</p>
+        </div>
+    </template>
+</template>

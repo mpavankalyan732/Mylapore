@@ -1,0 +1,9 @@
+@import 'c/restaurantStyles';
+
+.heading { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.lookup { display: grid; gap: 0.6rem; }
+.field { display: block; }
+.field > span { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.15rem; }
+.field input { width: 100%; box-sizing: border-box; border: 1px solid var(--r-border); border-radius: 0.5rem; padding: 0.45rem 0.6rem; font: inherit; }
+.backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.dialog { background: #fff; border-radius: 1rem; padding: 1.25rem; width: min(26rem, 100%); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); }

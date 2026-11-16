@@ -1,0 +1,43 @@
+<template>
+    <article class={cardClass}>
+        <button type="button" class="media" onclick={handleView} aria-label={viewLabel}>
+            <template lwc:if={imageUrl}>
+                <img class="photo" src={imageUrl} alt={item.name} loading="lazy" />
+            </template>
+            <template lwc:else>
+                <div class="photo placeholder" aria-hidden="true"></div>
+            </template>
+            <template lwc:if={item.isBestseller}><span class="ribbon">★ Bestseller</span></template>
+            <template lwc:if={unavailable}><span class="off">Currently unavailable</span></template>
+        </button>
+        <div class="body">
+            <div class="title-row">
+                <span class="veg" role="img" aria-label="Vegetarian"><span class="dot"></span></span>
+                <button type="button" class="name" onclick={handleView}>{item.name}</button>
+            </div>
+            <p class="desc">{item.description}</p>
+            <div class="chips">
+                <template lwc:if={item.isVegan}><span class="chip">Vegan</span></template>
+                <template lwc:if={item.isJain}><span class="chip">Jain</span></template>
+                <template lwc:if={item.spiceLevel}><span class="chip">{item.spiceLevel}</span></template>
+                <template lwc:if={hasCustomization}><span class="chip">Customizable</span></template>
+            </div>
+            <div class="foot">
+                <span class="price">{priceText}</span>
+                <template lwc:if={unavailable}>
+                    <button type="button" class="btn btn-outline" disabled>Unavailable</button>
+                </template>
+                <template lwc:elseif={inCart}>
+                    <div class="stepper" role="group" aria-label={stepperLabel}>
+                        <button type="button" onclick={handleDecrease} aria-label={decreaseLabel}>−</button>
+                        <output aria-live="polite">{quantity}</output>
+                        <button type="button" onclick={handleIncrease} aria-label={increaseLabel} disabled={atMax}>+</button>
+                    </div>
+                </template>
+                <template lwc:else>
+                    <button type="button" class="btn" onclick={handleAdd} aria-label={addLabel}>Add</button>
+                </template>
+            </div>
+        </div>
+    </article>
+</template>

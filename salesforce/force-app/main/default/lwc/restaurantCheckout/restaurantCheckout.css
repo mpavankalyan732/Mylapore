@@ -1,0 +1,15 @@
+@import 'c/restaurantStyles';
+
+.heading { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.group { border: 1px solid var(--r-border); border-radius: 0.6rem; padding: 0.6rem 0.8rem; margin: 0; }
+.group legend { font-weight: 700; font-size: 0.8125rem; padding: 0 0.3rem; }
+.field { display: block; }
+.field > span:first-child { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.15rem; }
+.field input, .field textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--r-border); border-radius: 0.5rem; padding: 0.45rem 0.6rem; font: inherit; }
+.field input.bad { border-color: var(--r-danger); background: #fff5f5; }
+.err { display: block; color: var(--r-danger); font-size: 0.75rem; margin-top: 0.15rem; }
+.ok { display: block; color: var(--r-green); font-size: 0.75rem; margin-top: 0.15rem; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.opt { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--r-border); border-radius: 999px; padding: 0.3rem 0.8rem; cursor: pointer; font-size: 0.8125rem; }
+.opt-on { border-color: var(--r-accent); background: #fbeee9; font-weight: 600; }
+@media (max-width: 480px) { .two { grid-template-columns: 1fr; } }

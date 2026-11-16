@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Restaurant Order</label>
+    <pluralLabel>Restaurant Orders</pluralLabel>
+    <nameField>
+        <label>Order Record</label>
+        <type>AutoNumber</type>
+        <displayFormat>RO-{00000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <description>Copy of orders placed through the Mylapore ordering card. PostgreSQL remains the source of truth.</description>
+</CustomObject>

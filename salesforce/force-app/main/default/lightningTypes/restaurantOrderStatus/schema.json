@@ -1,0 +1,5 @@
+{
+  "title": "Restaurant Order Status",
+  "description": "Current status of an order",
+  "lightning:type": "@apexClassType/c__RestaurantOrderStatusResponse"
+}

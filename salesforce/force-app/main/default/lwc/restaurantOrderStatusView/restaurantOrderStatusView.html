@@ -1,0 +1,26 @@
+<template>
+    <template lwc:if={failed}>
+        <div class="alert alert-error" role="alert">{value.message}</div>
+    </template>
+    <template lwc:else>
+        <div class="card stack">
+            <div class="spread">
+                <span class="strong">Order {value.orderNumber}</span>
+                <span class={badgeClass}>{statusText}</span>
+            </div>
+            <p>{value.statusMessage}</p>
+            <template lwc:if={hasTimeline}>
+                <ol class="timeline">
+                    <template for:each={steps} for:item="step">
+                        <li key={step.key} class={step.cssClass}>{step.label}</li>
+                    </template>
+                </ol>
+            </template>
+            <div class="spread"><span class="muted">Total</span><span class="price">{totalText}</span></div>
+            <template lwc:if={payUrl}>
+                <a class="btn" href={payUrl} target="_blank" rel="noopener noreferrer">Complete payment</a>
+            </template>
+            <p class="muted small">{value.cancellableReason}</p>
+        </div>
+    </template>
+</template>

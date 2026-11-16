@@ -1,0 +1,5 @@
+{
+  "title": "Restaurant Menu",
+  "description": "Menu, categories or dish search results",
+  "lightning:type": "@apexClassType/c__RestaurantMenuResponse"
+}

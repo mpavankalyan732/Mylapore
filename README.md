@@ -5,6 +5,7 @@ Next.js 15 (App Router, TypeScript) frontend and NestJS 11 + Prisma 6 + PostgreS
 ```
 frontend/   Next.js site: home, menu (5 languages), cart/checkout, order tracking, reservations, kitchen dashboard
 backend/    NestJS API (OpenAPI at /docs), Prisma schema + migration + seed
+salesforce/ Salesforce DX project: Apex actions, Lightning Types, LWCs and setup docs
 ```
 
 ## Run locally

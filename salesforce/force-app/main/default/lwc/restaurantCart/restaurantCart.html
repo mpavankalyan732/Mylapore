@@ -1,0 +1,48 @@
+<template>
+    <section class="card stack" aria-label="Your cart">
+        <div class="spread">
+            <h2 class="heading">Your cart</h2>
+            <button type="button" class="btn-link" onclick={handleContinue}>Continue shopping</button>
+        </div>
+
+        <template lwc:if={isEmpty}>
+            <p class="muted">Your cart is empty. Add something delicious from the menu.</p>
+        </template>
+        <template lwc:else>
+            <ul class="lines">
+                <template for:each={rows} for:item="row">
+                    <li key={row.id} class="line">
+                        <div class="info">
+                            <div class="strong">{row.name}</div>
+                            <div class="muted small">{row.unitText} each</div>
+                            <template lwc:if={row.unavailable}><div class="alert alert-error small">No longer available. Please remove it.</div></template>
+                            <template lwc:if={row.allowsNotes}>
+                                <label class="notes">
+                                    <span class="muted small">Instructions</span>
+                                    <input type="text" maxlength="180" value={row.notes} data-id={row.id} placeholder="e.g. less spicy" onchange={handleNotes} />
+                                </label>
+                            </template>
+                        </div>
+                        <div class="side">
+                            <div class="stepper" role="group" aria-label={row.stepperLabel}>
+                                <button type="button" data-id={row.id} onclick={handleDecrease} aria-label={row.decreaseLabel}>−</button>
+                                <output aria-live="polite">{row.quantity}</output>
+                                <button type="button" data-id={row.id} onclick={handleIncrease} aria-label={row.increaseLabel} disabled={row.atMax}>+</button>
+                            </div>
+                            <span class="price">{row.totalText}</span>
+                            <button type="button" class="btn-link" data-id={row.id} onclick={handleRemove}>Remove</button>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+
+            <div class="bill">
+                <div class="bill-row"><span>Subtotal</span><span>{subtotalText}</span></div>
+                <template lwc:if={showTax}><div class="bill-row"><span>Estimated tax ({taxPercent}%)</span><span>{taxText}</span></div></template>
+                <div class="bill-row bill-total"><span>Estimated total</span><span>{estimatedTotalText}</span></div>
+            </div>
+            <p class="muted small">{chargesNote}</p>
+            <button type="button" class="btn" onclick={handleCheckout} disabled={checkoutDisabled}>Checkout</button>
+        </template>
+    </section>
+</template>
