@@ -1,12 +1,12 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CheckoutInput, CheckoutResult, GatewayEvent, PaymentGateway } from './gateway.interface';
+import { CheckoutInput, CheckoutResult, GatewayEvent, PaymentGateway, QrInput, QrResult } from './gateway.interface';
 import { header, verifyHmacHex } from './hmac';
 
 /**
  * Razorpay hosted checkout via Payment Links (https://razorpay.com/docs/api/payments/payment-links/).
  * Webhook: header X-Razorpay-Signature = hex HMAC-SHA256(rawBody, webhookSecret); X-Razorpay-Event-Id is unique per event.
- * Configure the webhook for: payment_link.paid, payment_link.expired, payment_link.cancelled.
+ * Configure the webhook for: payment_link.paid, payment_link.expired, payment_link.cancelled, qr_code.credited.
  */
 @Injectable()
 export class RazorpayGateway implements PaymentGateway {
@@ -41,6 +41,34 @@ export class RazorpayGateway implements PaymentGateway {
     return { reference: j.id, checkoutUrl: j.short_url };
   }
 
+  /** Single-use fixed-amount UPI QR (https://razorpay.com/docs/api/qr-codes/). Paid = webhook qr_code.credited. */
+  async createQr(i: QrInput): Promise<QrResult> {
+    const id = this.config.get<string>('RAZORPAY_KEY_ID');
+    const secret = this.config.get<string>('RAZORPAY_KEY_SECRET');
+    if (!id || !secret) throw new BadGatewayException('Razorpay credentials not configured');
+    const res = await fetch('https://api.razorpay.com/v1/payments/qr_codes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + Buffer.from(`${id}:${secret}`).toString('base64'),
+      },
+      body: JSON.stringify({
+        type: 'upi_qr',
+        name: `Order ${i.orderNumber}`,
+        usage: 'single_use',
+        fixed_amount: true,
+        payment_amount: i.amountPaise,
+        description: `Order ${i.orderNumber}`,
+        // Razorpay requires close_by to be at least 2 minutes ahead.
+        close_by: Math.max(Math.floor(i.expiresAt.getTime() / 1000), Math.floor(Date.now() / 1000) + 130),
+        notes: { orderNumber: i.orderNumber },
+      }),
+    });
+    if (!res.ok) throw new BadGatewayException(`Razorpay error ${res.status}`);
+    const j = (await res.json()) as { id: string; image_url: string };
+    return { reference: j.id, qrImageUrl: j.image_url };
+  }
+
   verifySignature(raw: Buffer, headers: Record<string, string | string[] | undefined>) {
     return verifyHmacHex(this.config.get<string>('RAZORPAY_WEBHOOK_SECRET') ?? '', raw, header(headers, 'x-razorpay-signature'));
   }
@@ -48,8 +76,16 @@ export class RazorpayGateway implements PaymentGateway {
   parseEvent(raw: Buffer, headers: Record<string, string | string[] | undefined>): GatewayEvent {
     const body = JSON.parse(raw.toString('utf8'));
     const link = body?.payload?.payment_link?.entity;
+    const qr = body?.payload?.qr_code?.entity;
     const eventId = header(headers, 'x-razorpay-event-id') ?? '';
     const base = { eventId, reference: link?.id ?? '', amountPaise: Number(link?.amount ?? 0) };
+    if (body?.event === 'qr_code.credited') {
+      // The amount comes from the payment that was actually credited, not from the QR we created.
+      const pay = body?.payload?.payment?.entity;
+      return { eventId, type: 'PAID', reference: qr?.id ?? '', amountPaise: Number(pay?.amount ?? 0), gatewayPaymentId: pay?.id };
+    }
+    // qr_code.closed is ignored on purpose: a single-use QR also closes right after it is paid and the two
+    // events can arrive in either order. Expiry is derived from our own deadline instead (see paymentStatus).
     switch (body?.event) {
       case 'payment_link.paid':
         return { ...base, type: 'PAID', gatewayPaymentId: body?.payload?.payment?.entity?.id };

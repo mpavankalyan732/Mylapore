@@ -65,7 +65,7 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
     if (order.status !== 'PENDING_PAYMENT') throw new ForbiddenException('Order is not awaiting payment');
 
     const existing = await this.prisma.payment.findFirst({
-      where: { orderId, status: 'PENDING', checkoutUrl: { not: null }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+      where: { orderId, status: 'PENDING', method: { not: 'UPI_QR' }, checkoutUrl: { not: null }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
       orderBy: { createdAt: 'desc' },
     });
     if (existing?.checkoutUrl) return { checkoutUrl: existing.checkoutUrl, expiresAt: existing.expiresAt };
@@ -92,9 +92,7 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
       throw new BadGatewayException('Could not start online payment. Please try again.');
     }
 
-    const hosts = (this.config.get<string>('TRUSTED_CHECKOUT_HOSTS') ?? '').split(',');
-    if (gw.name === 'mock') hosts.push(new URL(frontend).hostname);
-    if (!isTrustedCheckoutUrl(result.checkoutUrl, hosts, !this.isProd)) {
+    if (!isTrustedCheckoutUrl(result.checkoutUrl, this.trustedHosts(gw.name), !this.isProd)) {
       this.log.error(`Rejected untrusted checkout URL for ${order.orderNumber}`);
       throw new BadGatewayException('Payment provider returned an untrusted checkout URL');
     }
@@ -105,11 +103,80 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
         provider: gw.name,
         reference: result.reference,
         amountPaise: order.totalPaise,
+        method: 'CARD',
         checkoutUrl: result.checkoutUrl,
         expiresAt,
       },
     });
     return { checkoutUrl: result.checkoutUrl, expiresAt };
+  }
+
+  /** Hosts a returned checkout/QR URL must belong to. */
+  private trustedHosts(gwName: string) {
+    const frontend = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+    const hosts = (this.config.get<string>('TRUSTED_CHECKOUT_HOSTS') ?? '').split(',');
+    if (gwName === 'mock') hosts.push(new URL(frontend).hostname);
+    return hosts;
+  }
+
+  /**
+   * Create (or reuse) a single-use UPI QR for a PENDING_PAYMENT order. The amount always comes from the order.
+   * Paid only when the signed webhook (qr_code.credited) arrives: showing the QR proves nothing.
+   */
+  async ensureQr(orderId: string): Promise<{ qrId: string; qrImageUrl: string; expiresAt: Date }> {
+    const order = await this.prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    if (order.status !== 'PENDING_PAYMENT') throw new ForbiddenException('Order is not awaiting payment');
+
+    const existing = await this.prisma.payment.findFirst({
+      where: { orderId, status: 'PENDING', method: 'UPI_QR', qrImageUrl: { not: null }, expiresAt: { gt: new Date(Date.now() + 60_000) } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (existing?.qrImageUrl && existing.expiresAt) return { qrId: existing.reference, qrImageUrl: existing.qrImageUrl, expiresAt: existing.expiresAt };
+
+    const gw = this.gateways[this.activeProvider];
+    if (!gw?.createQr) throw new BadGatewayException('UPI QR is not available with the current payment provider');
+    const expiresAt = new Date(Date.now() + 15 * 60_000);
+    let result;
+    try {
+      result = await gw.createQr({ orderNumber: order.orderNumber, amountPaise: order.totalPaise, expiresAt });
+    } catch (e) {
+      this.log.error(`QR creation failed for ${order.orderNumber}: ${(e as Error).message}`);
+      throw new BadGatewayException('Could not create the UPI QR. Please try again.');
+    }
+    if (!isTrustedCheckoutUrl(result.qrImageUrl, this.trustedHosts(gw.name), !this.isProd)) {
+      this.log.error(`Rejected untrusted QR image URL for ${order.orderNumber}`);
+      throw new BadGatewayException('Payment provider returned an untrusted QR image URL');
+    }
+    await this.prisma.payment.create({
+      data: { orderId: order.id, provider: gw.name, reference: result.reference, amountPaise: order.totalPaise, method: 'UPI_QR', qrImageUrl: result.qrImageUrl, expiresAt },
+    });
+    return { qrId: result.reference, qrImageUrl: result.qrImageUrl, expiresAt };
+  }
+
+  /**
+   * Payment state for the card to poll. PAID only reflects what the signed webhook recorded.
+   * A QR/link whose deadline passed without payment is reported EXPIRED so the guest can retry.
+   */
+  async paymentStatus(orderId: string): Promise<{ status: 'PENDING_PAYMENT' | 'PAID' | 'FAILED' | 'EXPIRED'; amountPaise: number; paidAt: Date | null; expiresAt: Date | null }> {
+    const order = await this.prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: { payments: { orderBy: { createdAt: 'desc' } } } });
+    return PaymentsService.derivePaymentStatus(order);
+  }
+
+  static derivePaymentStatus(order: {
+    status: string; paymentStatus: string; paymentMethod: string; totalPaise: number; confirmedAt: Date | null;
+    payments: { status: string; expiresAt: Date | null }[];
+  }, now = Date.now()) {
+    const latest = order.payments[0];
+    const expiresAt = latest?.expiresAt ?? null;
+    const unpaid = { amountPaise: order.totalPaise, paidAt: null as Date | null, expiresAt };
+    if (['PAID', 'REFUND_REQUIRED', 'REFUNDED'].includes(order.paymentStatus)) {
+      return { ...unpaid, paidAt: order.confirmedAt, status: 'PAID' as const };
+    }
+    if (order.paymentMethod === 'COD') return { ...unpaid, status: 'PENDING_PAYMENT' as const };
+    if (order.status === 'PAYMENT_FAILED' || order.paymentStatus === 'FAILED') return { ...unpaid, status: 'FAILED' as const };
+    if (order.status === 'EXPIRED' || order.status === 'CANCELLED' || order.paymentStatus === 'EXPIRED') return { ...unpaid, status: 'EXPIRED' as const };
+    if (latest && latest.status === 'PENDING' && latest.expiresAt && latest.expiresAt.getTime() < now) return { ...unpaid, status: 'EXPIRED' as const };
+    return { ...unpaid, status: 'PENDING_PAYMENT' as const };
   }
 
   // ---------------------------------------------------------------- webhook handling

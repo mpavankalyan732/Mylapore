@@ -3,7 +3,7 @@ import { ApiHeader, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CreateReservationDto } from '../reservations/reservations.module';
 import { AgentKeyGuard } from './agent.guard';
-import { CreateAgentOrderDto, MenuQueryDto, OrderCancelDto, OrderLookupDto, ReservationLookupDto } from './agent.dto';
+import { CreateAgentOrderDto, MenuQueryDto, OrderCancelDto, OrderLookupDto, PaymentStatusQueryDto, ReservationLookupDto, StartPaymentDto } from './agent.dto';
 import { AgentService } from './agent.service';
 
 const READ = { default: { limit: 300, ttl: 60_000 } };
@@ -39,6 +39,12 @@ export class AgentController {
   @Post('orders') @Throttle(WRITE)
   @ApiHeader({ name: 'Idempotency-Key', required: false, description: 'Or send idempotencyKey in the body. 8-100 chars. Same key returns the same order.' })
   createOrder(@Body() dto: CreateAgentOrderDto, @Headers('idempotency-key') key?: string) { return this.agent.createOrder(dto, key); }
+
+  @Post('orders/:orderNumber/payment') @HttpCode(200) @Throttle(WRITE)
+  startPayment(@Param('orderNumber') n: string, @Body() dto: StartPaymentDto) { return this.agent.startPayment(n, dto.customerPhone, dto.method); }
+
+  @Get('orders/:orderNumber/payment-status') @Throttle(LOOKUP)
+  paymentStatus(@Param('orderNumber') n: string, @Query() q: PaymentStatusQueryDto) { return this.agent.paymentStatus(n, q.phone); }
 
   @Post('orders/details') @HttpCode(200) @Throttle(LOOKUP)
   orderDetails(@Body() dto: OrderLookupDto) { return this.agent.orderDetails(dto.orderNumber, dto.customerPhone); }

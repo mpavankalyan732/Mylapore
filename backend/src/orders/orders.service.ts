@@ -26,10 +26,10 @@ export class OrdersService {
 
   // ---------------------------------------------------------------- create
 
-  async create(dto: CreateOrderDto, idempotencyKey: string, userId?: string) {
+  async create(dto: CreateOrderDto, idempotencyKey: string, userId?: string, opts: { deferCheckout?: boolean } = {}) {
     // 1. Duplicate submit: same key returns the same order instead of creating another.
     const existing = await this.prisma.order.findUnique({ where: { idempotencyKey }, include: orderInclude });
-    if (existing) return this.respond(existing, true);
+    if (existing) return this.respond(existing, true, opts.deferCheckout);
 
     // 2. Fulfilment / payment rules
     const pincodes = (this.config.get<string>('SERVICE_PINCODES') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -101,20 +101,21 @@ export class OrdersService {
         this.realtime.emitKitchenNewOrder(order);
         this.realtime.emitOrderUpdated(order);
       }
-      return this.respond(order, false);
+      return this.respond(order, false, opts.deferCheckout);
     } catch (e) {
       // Race: two concurrent submits with the same key. The unique index makes one win.
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         const again = await this.prisma.order.findUnique({ where: { idempotencyKey }, include: orderInclude });
-        if (again) return this.respond(again, true);
+        if (again) return this.respond(again, true, opts.deferCheckout);
       }
       throw e;
     }
   }
 
-  private async respond(order: FullOrder, replay: boolean) {
+  /** deferCheckout: the caller picks card or UPI QR next, so no payment link is created up front. */
+  private async respond(order: FullOrder, replay: boolean, deferCheckout = false) {
     let checkoutUrl: string | undefined;
-    if (order.status === 'PENDING_PAYMENT' && order.paymentMethod === 'ONLINE') {
+    if (!deferCheckout && order.status === 'PENDING_PAYMENT' && order.paymentMethod === 'ONLINE') {
       checkoutUrl = (await this.payments.ensureCheckout(order.id)).checkoutUrl;
     }
     return { ...this.view(order), lookupToken: order.lookupToken, checkoutUrl, replay };

@@ -15,6 +15,13 @@ export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
   /** Gateway webhook. Signature is verified against the raw body (see main.ts rawBody: true). */
+  @Post('razorpay/webhook')
+  @HttpCode(200)
+  @SkipThrottle()
+  razorpayWebhook(@Req() req: RawBodyRequest<Request>, @Headers() headers: Record<string, string | string[] | undefined>) {
+    return this.payments.handleWebhook('razorpay', req.rawBody, headers);
+  }
+
   @Post('webhook/:provider')
   @HttpCode(200)
   @SkipThrottle()

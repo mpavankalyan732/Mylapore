@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { OrdersService } from '../orders/orders.service';
+import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservationDto, ReservationsService } from '../reservations/reservations.module';
 import { CreateAgentOrderDto, MenuQueryDto } from './agent.dto';
@@ -21,6 +22,7 @@ export class AgentService {
     private readonly config: ConfigService,
     private readonly orders: OrdersService,
     private readonly reservations: ReservationsService,
+    private readonly payments: PaymentsService,
   ) {}
 
   private get base() {
@@ -131,20 +133,41 @@ export class AgentService {
   async createOrder(dto: CreateAgentOrderDto, headerKey?: string) {
     const key = headerKey ?? dto.idempotencyKey;
     if (!key || key.length < 8 || key.length > 100) throw new BadRequestException('Idempotency-Key header (or idempotencyKey, 8-100 chars) is required');
-    const { idempotencyKey: _ignored, ...orderDto } = dto; // eslint-disable-line @typescript-eslint/no-unused-vars
-    const res = await this.orders.create(orderDto, key); // same validation, pricing and availability rules as the website
+    const { idempotencyKey: _ignored, deferCheckout, ...orderDto } = dto; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const res = await this.orders.create(orderDto, key, undefined, { deferCheckout }); // same validation, pricing and availability rules as the website
     const full = await this.prisma.order.findUniqueOrThrow({ where: { orderNumber: res.orderNumber }, include: { items: true, customer: true } });
     const mapped = this.mapOrder(full);
     return {
       ...mapped,
       replay: res.replay,
       checkoutUrl: res.checkoutUrl ?? null,
-      nextAction: res.checkoutUrl ? 'OPEN_CHECKOUT' : 'NONE',
+      nextAction: res.checkoutUrl ? 'OPEN_CHECKOUT' : full.status === 'PENDING_PAYMENT' ? 'CHOOSE_PAYMENT' : 'NONE',
       trackingUrl: `${this.base.replace(/\/$/, '')}/order/${res.orderNumber}?t=${res.lookupToken}`,
       confirmation: res.checkoutUrl
         ? `Order ${res.orderNumber} created. It will be sent to the kitchen once the online payment is completed.`
         : `Order ${res.orderNumber} is confirmed and sent to the kitchen.`,
     };
+  }
+
+  /** Start CARD (payment link) or UPI_QR payment for an unpaid online order. Ownership = order phone. */
+  async startPayment(orderNumber: string, phone: string, method: 'CARD' | 'UPI_QR') {
+    const o = await this.orders.findOwned(orderNumber, phone);
+    if (o.paymentMethod !== 'ONLINE' || o.status !== 'PENDING_PAYMENT') {
+      throw new BadRequestException('This order is not waiting for an online payment.');
+    }
+    if (method === 'CARD') {
+      const c = await this.payments.ensureCheckout(o.id);
+      return { orderNumber, method, paymentUrl: c.checkoutUrl, qrImageUrl: null, qrId: null, expiresAt: c.expiresAt?.toISOString() ?? null };
+    }
+    const q = await this.payments.ensureQr(o.id);
+    return { orderNumber, method, paymentUrl: null, qrImageUrl: q.qrImageUrl, qrId: q.qrId, expiresAt: q.expiresAt.toISOString() };
+  }
+
+  /** PAID is reported only after the signed webhook recorded it. */
+  async paymentStatus(orderNumber: string, phone: string) {
+    const o = await this.orders.findOwned(orderNumber, phone);
+    const s = await this.payments.paymentStatus(o.id);
+    return { orderNumber, status: s.status, amount: toRupees(s.amountPaise), amountPaise: s.amountPaise, currency: 'INR', paidAt: s.paidAt?.toISOString() ?? null, expiresAt: s.expiresAt?.toISOString() ?? null, orderStatus: o.status };
   }
 
   async orderDetails(orderNumber: string, phone: string) {

@@ -31,8 +31,17 @@ services:
         generateValue: true
       - key: SALESFORCE_INBOUND_KEY
         generateValue: true
+      # Razorpay TEST-mode keys: enter the values in the Render dashboard, never commit them.
       - key: PAYMENT_PROVIDER
-        value: mock
+        value: razorpay
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: TRUSTED_CHECKOUT_HOSTS
+        value: rzp.io,razorpay.com
       - key: COD_ENABLED
         value: "true"
       - key: TAX_PERCENT

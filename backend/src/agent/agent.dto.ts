@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsOptional, IsString, IsUUID, Length, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, IsUUID, Length, Matches, MaxLength } from 'class-validator';
 import { CreateOrderDto } from '../orders/orders.dto';
 
 const stripSpaces = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.replace(/[\s-]/g, '') : value);
@@ -18,6 +18,8 @@ export class MenuQueryDto {
 export class CreateAgentOrderDto extends CreateOrderDto {
   /** Alternative to the Idempotency-Key header (8-100 chars). Retrying with the same key returns the same order. */
   @IsOptional() @IsString() @Length(8, 100) idempotencyKey?: string;
+  /** The ordering card sets this so card / UPI QR can be chosen afterwards (POST /agent/orders/:n/payment). */
+  @IsOptional() @IsBoolean() deferCheckout?: boolean;
 }
 
 export class OrderLookupDto {
@@ -33,4 +35,13 @@ export class OrderCancelDto extends OrderLookupDto {
 export class ReservationLookupDto {
   @IsUUID() reservationId: string;
   @Transform(stripSpaces) @Matches(PHONE, { message: 'customerPhone must be a valid Indian mobile number' }) customerPhone: string;
+}
+
+export class StartPaymentDto {
+  @Transform(stripSpaces) @Matches(PHONE, { message: 'customerPhone must be a valid Indian mobile number' }) customerPhone: string;
+  @IsIn(['CARD', 'UPI_QR']) method: 'CARD' | 'UPI_QR';
+}
+
+export class PaymentStatusQueryDto {
+  @Transform(stripSpaces) @Matches(PHONE, { message: 'phone must be a valid Indian mobile number' }) phone: string;
 }
