@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter } from 'next/font/google';
 import { Suspense } from 'react';
 import BottomNav from '@/components/BottomNav';
+import AgentforceChat from '@/components/AgentforceChat';
 import CartDrawer from '@/components/CartDrawer';
 import CategoryBar from '@/components/CategoryBar';
 import Footer from '@/components/Footer';
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CartDrawer />
           <ItemSheet />
           <LocationModal />
+          <AgentforceChat />
         </Providers>
       </body>
     </html>
