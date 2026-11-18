@@ -13,6 +13,27 @@ export class RazorpayGateway implements PaymentGateway {
   readonly name = 'razorpay';
   constructor(private readonly config: ConfigService) {}
 
+  /** Fetch the authoritative Payment Link state from Razorpay (server-to-server). */
+  async fetchPaymentLink(reference: string): Promise<{ status: string; amountPaid: number; paymentId?: string }> {
+    const id = this.config.get<string>('RAZORPAY_KEY_ID');
+    const secret = this.config.get<string>('RAZORPAY_KEY_SECRET');
+    if (!id || !secret) throw new BadGatewayException('Razorpay credentials not configured');
+    const res = await fetch(`https://api.razorpay.com/v1/payment_links/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: 'Basic ' + Buffer.from(`${id}:${secret}`).toString('base64') },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new BadGatewayException(`Razorpay status error ${res.status}`);
+    const link = (await res.json()) as {
+      id: string; status: string; amount_paid?: number;
+      payments?: { payment_id?: string; status?: string }[];
+    };
+    return {
+      status: link.status,
+      amountPaid: Number(link.amount_paid ?? 0),
+      paymentId: link.payments?.find((payment) => payment.status === 'captured')?.payment_id,
+    };
+  }
+
   async createCheckout(i: CheckoutInput): Promise<CheckoutResult> {
     const id = this.config.get<string>('RAZORPAY_KEY_ID');
     const secret = this.config.get<string>('RAZORPAY_KEY_SECRET');

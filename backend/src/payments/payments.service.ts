@@ -178,8 +178,40 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
    * A QR/link whose deadline passed without payment is reported EXPIRED so the guest can retry.
    */
   async paymentStatus(orderId: string): Promise<{ status: 'PENDING_PAYMENT' | 'PAID' | 'FAILED' | 'EXPIRED'; amountPaise: number; paidAt: Date | null; expiresAt: Date | null }> {
+    await this.reconcileRazorpayLink(orderId);
     const order = await this.prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: { payments: { orderBy: { createdAt: 'desc' } } } });
     return PaymentsService.derivePaymentStatus(order);
+  }
+
+  /**
+   * Reconcile a pending hosted checkout directly with Razorpay. This covers delayed/missing webhooks
+   * and the browser callback, which must never be trusted as payment proof on its own.
+   */
+  private async reconcileRazorpayLink(orderId: string) {
+    if (this.activeProvider !== 'razorpay') return;
+    const payment = await this.prisma.payment.findFirst({
+      where: { orderId, provider: 'razorpay', method: 'CARD', status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!payment) return;
+    try {
+      const result = await this.gateways.razorpay.fetchPaymentLink(payment.reference);
+      if (result.status !== 'paid' || result.amountPaid !== payment.amountPaise || !result.paymentId) return;
+      const changed = await this.prisma.$transaction((tx) => this.applyEvent(tx, 'razorpay', {
+        eventId: `reconcile:${payment.reference}:${result.paymentId}`,
+        reference: payment.reference,
+        amountPaise: result.amountPaid,
+        gatewayPaymentId: result.paymentId,
+        type: 'PAID',
+      }));
+      if (changed) {
+        this.realtime.emitOrderUpdated(changed);
+        if (changed.status === 'CONFIRMED') this.realtime.emitKitchenNewOrder(changed);
+      }
+    } catch (error) {
+      // Status reads should remain available during a transient Razorpay API outage.
+      this.log.warn(`Razorpay reconciliation deferred for order ${orderId}: ${(error as Error).message}`);
+    }
   }
 
   static derivePaymentStatus(order: {
