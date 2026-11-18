@@ -6,4 +6,5 @@
    - API: `FRONTEND_URL`, `CORS_ORIGINS`, `PUBLIC_ASSET_URL` = the site URL
    - Site: `NEXT_PUBLIC_API_URL` = `<API URL>/api/v1`, `NEXT_PUBLIC_WS_URL` = `<API URL>`; then redeploy the site (NEXT_PUBLIC values are baked in at build).
 4. Check `<API URL>/api/v1/health`. Free plan services sleep after inactivity; the first request is slow, and the free database expires after 30 days.
-5. Salesforce: run `node scripts/configure-endpoint.mjs <API URL>` in `mylapore-salesforce` and use the generated `AGENT_API_KEY` (Render dashboard > mylapore-api > Environment) as the `ApiKey` secret.
+5. In the Render API service, set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET`. Configure the Razorpay webhook at `<API URL>/api/v1/payments/webhook/razorpay` for `payment_link.paid`, `payment_link.expired`, `payment_link.cancelled` and `qr_code.credited`. The Razorpay account must have UPI QR codes enabled.
+6. Salesforce: run `node scripts/configure-endpoint.mjs <API URL>` in the Salesforce project and use the generated `AGENT_API_KEY` (Render dashboard > mylapore-api > Environment) as the `ApiKey` secret.

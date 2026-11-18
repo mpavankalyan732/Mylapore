@@ -143,8 +143,10 @@ export class AgentService {
       checkoutUrl: res.checkoutUrl ?? null,
       nextAction: res.checkoutUrl ? 'OPEN_CHECKOUT' : full.status === 'PENDING_PAYMENT' ? 'CHOOSE_PAYMENT' : 'NONE',
       trackingUrl: `${this.base.replace(/\/$/, '')}/order/${res.orderNumber}?t=${res.lookupToken}`,
-      confirmation: res.checkoutUrl
-        ? `Order ${res.orderNumber} created. It will be sent to the kitchen once the online payment is completed.`
+      confirmation: full.status === 'PENDING_PAYMENT'
+        ? res.checkoutUrl
+          ? `Order ${res.orderNumber} created. It will be sent to the kitchen once the online payment is completed.`
+          : `Order ${res.orderNumber} is waiting for online payment. Choose a payment method to continue.`
         : `Order ${res.orderNumber} is confirmed and sent to the kitchen.`,
     };
   }

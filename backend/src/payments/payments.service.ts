@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -70,8 +71,15 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
     });
     if (existing?.checkoutUrl) return { checkoutUrl: existing.checkoutUrl, expiresAt: existing.expiresAt };
 
+    const activeQr = await this.prisma.payment.findFirst({
+      where: { orderId, status: 'PENDING', method: 'UPI_QR', qrImageUrl: { not: null }, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (activeQr) throw new ConflictException('A UPI QR payment is already in progress. Complete it or cancel the order first.');
+
     const gw = this.gateways[this.activeProvider];
     if (!gw) throw new BadGatewayException('Payment provider not configured');
+    if (this.isProd && gw.name === 'mock') throw new BadGatewayException('Online payments are not configured for production.');
     const expiryMin = Number(this.config.get('PAYMENT_PENDING_EXPIRY_MINUTES') ?? 30);
     const expiresAt = new Date(Date.now() + expiryMin * 60_000);
     const frontend = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
@@ -133,9 +141,21 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
     });
     if (existing?.qrImageUrl && existing.expiresAt) return { qrId: existing.reference, qrImageUrl: existing.qrImageUrl, expiresAt: existing.expiresAt };
 
+    const activeCard = await this.prisma.payment.findFirst({
+      where: { orderId, status: 'PENDING', method: { not: 'UPI_QR' }, checkoutUrl: { not: null }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (activeCard) throw new ConflictException('A card payment is already in progress. Complete it or cancel the order first.');
+
+    const expiryMin = Number(this.config.get('PAYMENT_PENDING_EXPIRY_MINUTES') ?? 30);
+    const orderExpiry = new Date(order.createdAt.getTime() + expiryMin * 60_000);
+    if (orderExpiry.getTime() - Date.now() < 130_000) {
+      throw new ConflictException('The order payment window is almost over. Cancel this order and place a new one.');
+    }
+
     const gw = this.gateways[this.activeProvider];
     if (!gw?.createQr) throw new BadGatewayException('UPI QR is not available with the current payment provider');
-    const expiresAt = new Date(Date.now() + 15 * 60_000);
+    const expiresAt = new Date(Math.min(Date.now() + 15 * 60_000, orderExpiry.getTime()));
     let result;
     try {
       result = await gw.createQr({ orderNumber: order.orderNumber, amountPaise: order.totalPaise, expiresAt });

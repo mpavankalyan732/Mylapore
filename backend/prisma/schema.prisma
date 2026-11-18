@@ -169,7 +169,7 @@ model Payment {
   amountPaise      Int
   status           PaymentStatus @default(PENDING)
   checkoutUrl      String?
-  method           String? // CARD | UPI_QR
+  method           String    @default("CARD") // CARD | UPI_QR
   qrImageUrl       String?
   expiresAt        DateTime?
   createdAt        DateTime      @default(now())

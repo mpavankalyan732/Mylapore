@@ -14,6 +14,8 @@ All money values are returned in rupees (`price`, `total`) **and** paise (`price
 | `GET /agent/items?category=&subcategory=&q=&includeUnavailable=` | Flat dish search | `getItems` | `getMenuItems` | - |
 | `GET /agent/items/:idOrSlug` | One dish | `getItemDetails` | `getMenuItemDetails` | `RestaurantMenuController.getItemDetails` |
 | `POST /agent/orders` (+ `Idempotency-Key` header or `idempotencyKey`) | Place an order | `createOrder` | `createRestaurantOrder` | `RestaurantOrderController.placeOrder` |
+| `POST /agent/orders/:orderNumber/payment` `{customerPhone, method}` | Start/reuse CARD or UPI QR payment | `startPayment` | - | `RestaurantCartController.startPayment` |
+| `GET /agent/orders/:orderNumber/payment-status?phone=` | Read verified payment status | `getPaymentStatus` | - | `RestaurantCartController.getPaymentStatus` |
 | `POST /agent/orders/details` `{orderNumber, customerPhone}` | Order details | `getOrderDetails` | `getOrderDetails` | `getOrderDetails` |
 | `POST /agent/orders/status` `{orderNumber, customerPhone}` | Order status | `getOrderStatus` | `getOrderStatus` | `getOrderStatus` |
 | `POST /agent/orders/cancel` `{orderNumber, customerPhone, reason?}` | Cancel an order | `cancelOrder` | `cancelRestaurantOrder` | `cancelOrder` |
@@ -24,6 +26,7 @@ All money values are returned in rupees (`price`, `total`) **and** paise (`price
 Notes
 - Order and reservation lookups use **phone ownership**: a wrong phone or unknown number returns the same `404` (no enumeration).
 - `POST /agent/orders` reuses the website's order logic: server-side pricing, availability check, delivery-area check, idempotency. Client-sent prices are rejected (`400`).
+- The Salesforce ordering card sends `deferCheckout: true` so the guest can choose card or UPI QR after order creation. An order becomes `PAID` only after the signed Razorpay webhook is verified.
 - Cancellation rule (enforced by the backend): allowed while the order is `PENDING_PAYMENT` or `CONFIRMED`. Not allowed once `PREPARING`, `READY`, `OUT_FOR_DELIVERY`, `COMPLETED` or already closed. A paid online order is cancelled and flagged `REFUND_REQUIRED`.
 - Subcategories: the menu has none. `subcategory` is accepted, ignored, and a warning is returned. `subcategories` is always `[]` today.
 - Customization: no structured options exist. `customizations` is `[]`; each ordered item accepts free-text `notes`.
