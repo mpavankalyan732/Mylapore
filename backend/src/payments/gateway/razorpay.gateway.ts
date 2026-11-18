@@ -1,6 +1,6 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CheckoutInput, CheckoutResult, GatewayEvent, PaymentGateway, QrInput, QrResult } from './gateway.interface';
+import { CheckoutInput, CheckoutResult, GatewayEvent, PaymentGateway, PaymentLinkStatus, QrInput, QrResult } from './gateway.interface';
 import { header, verifyHmacHex } from './hmac';
 
 /**
@@ -14,7 +14,7 @@ export class RazorpayGateway implements PaymentGateway {
   constructor(private readonly config: ConfigService) {}
 
   /** Fetch the authoritative Payment Link state from Razorpay (server-to-server). */
-  async fetchPaymentLink(reference: string): Promise<{ status: string; amountPaid: number; paymentId?: string }> {
+  async fetchPaymentLink(reference: string): Promise<PaymentLinkStatus> {
     const id = this.config.get<string>('RAZORPAY_KEY_ID');
     const secret = this.config.get<string>('RAZORPAY_KEY_SECRET');
     if (!id || !secret) throw new BadGatewayException('Razorpay credentials not configured');

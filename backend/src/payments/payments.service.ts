@@ -194,8 +194,10 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
       orderBy: { createdAt: 'desc' },
     });
     if (!payment) return;
+    const fetchPaymentLink = this.gateways.razorpay.fetchPaymentLink;
+    if (!fetchPaymentLink) return;
     try {
-      const result = await this.gateways.razorpay.fetchPaymentLink(payment.reference);
+      const result = await fetchPaymentLink.call(this.gateways.razorpay, payment.reference);
       if (result.status !== 'paid' || result.amountPaid !== payment.amountPaise || !result.paymentId) return;
       const changed = await this.prisma.$transaction((tx) => this.applyEvent(tx, 'razorpay', {
         eventId: `reconcile:${payment.reference}:${result.paymentId}`,

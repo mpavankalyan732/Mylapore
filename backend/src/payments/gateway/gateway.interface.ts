@@ -32,11 +32,19 @@ export interface GatewayEvent {
   gatewayPaymentId?: string;
 }
 
+export interface PaymentLinkStatus {
+  status: string;
+  amountPaid: number;
+  paymentId?: string;
+}
+
 export interface PaymentGateway {
   readonly name: string;
   createCheckout(input: CheckoutInput): Promise<CheckoutResult>;
   /** Optional: single-use, fixed-amount UPI QR. */
   createQr?(input: QrInput): Promise<QrResult>;
+  /** Optional: fetch authoritative state for hosted payment links (used for Razorpay reconciliation). */
+  fetchPaymentLink?(reference: string): Promise<PaymentLinkStatus>;
   /** Must verify an HMAC over the EXACT raw request bytes, using a timing-safe compare. */
   verifySignature(rawBody: Buffer, headers: Record<string, string | string[] | undefined>): boolean;
   parseEvent(rawBody: Buffer, headers: Record<string, string | string[] | undefined>): GatewayEvent;
