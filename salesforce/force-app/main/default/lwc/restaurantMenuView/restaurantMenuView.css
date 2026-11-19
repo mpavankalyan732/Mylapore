@@ -1,4 +1,13 @@
 @import 'c/restaurantStyles';
+:host { display: block; width: 100%; max-width: 100%; min-width: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+.stack, .card, .dish, .field, .bill, .row, .spread { min-width: 0; max-width: 100%; }
+.field input { width: 100%; min-width: 0; max-width: 100%; font-size: 16px; }
+.field input[type='radio'] { width: auto; }
+.row { flex-wrap: wrap; }
+.bill-row { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.dish { overflow-wrap: anywhere; }
+img { max-width: 100%; height: auto; }
 .list { list-style: none; margin: 0; padding: 0; }
 .dish { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--r-border); }
 .dish:first-child { border-top: 0; }
@@ -21,3 +30,8 @@
 .err { display: block; color: var(--r-danger); font-weight: 400; font-size: 0.75rem; margin-top: 0.15rem; }
 .opt { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem; margin-top: 0.3rem; border: 1px solid var(--r-border); border-radius: 0.5rem; font-weight: 400; cursor: pointer; }
 .opt-on { border-color: var(--r-accent); background: #fbeee9; }
+@media (max-width: 380px) {
+    .dish { flex-wrap: wrap; }
+    .dish > .grow { flex-basis: calc(100% - 5rem); }
+    .cta > .btn { flex: 1 1 100%; }
+}

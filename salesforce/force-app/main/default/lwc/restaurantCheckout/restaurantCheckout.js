@@ -140,6 +140,14 @@ export default class RestaurantCheckout extends LightningElement {
         }
     }
 
+    handleEnterKey(event) {
+        if (event.key === 'Enter' && event.target?.type !== 'radio' && event.target?.tagName !== 'TEXTAREA') {
+            event.preventDefault?.();
+            event.target?.blur?.();
+            this.handleSubmit(event);
+        }
+    }
+
     validate() {
         const e = {};
         if (this.customerName.trim().length < 2) {
@@ -166,7 +174,7 @@ export default class RestaurantCheckout extends LightningElement {
     }
 
     async handleSubmit(event) {
-        event.preventDefault();
+        event?.preventDefault?.();
         if (this.submitting) {
             return; // duplicate-click guard
         }

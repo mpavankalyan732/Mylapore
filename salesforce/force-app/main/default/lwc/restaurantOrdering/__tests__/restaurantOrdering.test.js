@@ -216,7 +216,7 @@ describe('c-restaurant-ordering', () => {
         };
         await set('customerName', 'Asha');
         await set('customerPhone', '9876543210');
-        checkout.shadowRoot.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+        checkout.shadowRoot.querySelector('[data-id="submit"]').click();
         await flush();
         await flush();
 
@@ -244,7 +244,7 @@ describe('c-restaurant-ordering', () => {
             input.dispatchEvent(new CustomEvent('change'));
             await flush();
         }
-        checkout.shadowRoot.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+        checkout.shadowRoot.querySelector('[data-id="submit"]').click();
         await flush();
         await flush();
         const cart = q(el, 'c-restaurant-cart');

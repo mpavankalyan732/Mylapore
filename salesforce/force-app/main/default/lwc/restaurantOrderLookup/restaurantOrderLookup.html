@@ -5,17 +5,17 @@
             <button type="button" class="btn-link" onclick={handleBack}>Back to menu</button>
         </div>
 
-        <form class="lookup" onsubmit={handleLookup} novalidate>
+        <div class="lookup" role="form" aria-label="Find your order">
             <label class="field">
                 <span>Order number</span>
-                <input name="orderNumber" type="text" maxlength="40" value={orderNumber} onchange={handleField} placeholder="e.g. VR261111-AB12CD" />
+                <input name="orderNumber" type="text" maxlength="40" value={orderNumber} onchange={handleField} onkeydown={handleEnterKey} placeholder="e.g. VR261111-AB12CD" />
             </label>
             <label class="field">
                 <span>Mobile number used for the order</span>
-                <input name="phone" type="tel" inputmode="numeric" value={phone} onchange={handleField} placeholder="98765 43210" />
+                <input name="phone" type="tel" inputmode="numeric" value={phone} onchange={handleField} onkeydown={handleEnterKey} placeholder="98765 43210" />
             </label>
-            <button type="submit" class="btn" disabled={loading}>{lookupLabel}</button>
-        </form>
+            <button type="button" class="btn" data-id="submit" onclick={handleLookup} disabled={loading}>{lookupLabel}</button>
+        </div>
 
         <template lwc:if={error}><div class="alert alert-error" role="alert">{error}</div></template>
         <template lwc:if={notice}><div class={noticeClass} role="status">{notice}</div></template>

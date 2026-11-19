@@ -58,6 +58,13 @@ export default class RestaurantOrderLookup extends LightningElement {
     handleField(event) {
         this[event.target.name === 'phone' ? 'phone' : 'orderNumber'] = event.target.value;
     }
+    handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault?.();
+            event.target?.blur?.();
+            this.handleLookup(event);
+        }
+    }
     handleBack() {
         this.dispatchEvent(new CustomEvent('back'));
     }
@@ -78,7 +85,7 @@ export default class RestaurantOrderLookup extends LightningElement {
     }
 
     handleLookup(event) {
-        event.preventDefault();
+        event?.preventDefault?.();
         this.lookup();
     }
 

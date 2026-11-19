@@ -1,4 +1,10 @@
 @import 'c/restaurantStyles';
+:host { display: block; width: 100%; max-width: 100%; min-width: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+.card, .group, .field, .bill, .row { min-width: 0; max-width: 100%; }
+.field input, .field textarea { min-width: 0; max-width: 100%; font-size: 16px; }
+.row { flex-wrap: wrap; }
+.bill-row { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 
 .heading { margin: 0; font-size: 1.125rem; font-weight: 700; }
 .group { border: 1px solid var(--r-border); border-radius: 0.6rem; padding: 0.6rem 0.8rem; margin: 0; }
@@ -13,3 +19,4 @@
 .opt { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--r-border); border-radius: 999px; padding: 0.3rem 0.8rem; cursor: pointer; font-size: 0.8125rem; }
 .opt-on { border-color: var(--r-accent); background: #fbeee9; font-weight: 600; }
 @media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+@media (max-width: 380px) { .opt { max-width: 100%; white-space: normal; } }

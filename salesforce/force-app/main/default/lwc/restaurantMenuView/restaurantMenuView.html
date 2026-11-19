@@ -93,14 +93,14 @@
 
             <!-- ============ CHECKOUT ============ -->
             <template lwc:if={isCheckout}>
-                <form class="card stack" onsubmit={handlePlaceOrder} novalidate>
+                <div class="card stack" role="form" aria-label="Checkout">
                     <div class="strong">Checkout</div>
                     <label class="field">Your name
-                        <input class={nameClass} type="text" name="customerName" value={customerName} onchange={handleField} autocomplete="name" />
+                        <input class={nameClass} type="text" name="customerName" value={customerName} onchange={handleField} onkeydown={handleEnterKey} autocomplete="name" />
                         <template lwc:if={errors.customerName}><span class="err">{errors.customerName}</span></template>
                     </label>
                     <label class="field">Mobile number
-                        <input class={phoneClass} type="tel" name="customerPhone" value={customerPhone} onchange={handleField} autocomplete="tel" />
+                        <input class={phoneClass} type="tel" name="customerPhone" value={customerPhone} onchange={handleField} onkeydown={handleEnterKey} autocomplete="tel" />
                         <template lwc:if={errors.customerPhone}><span class="err">{errors.customerPhone}</span></template>
                     </label>
                     <fieldset class="field">
@@ -113,11 +113,11 @@
                     </fieldset>
                     <template lwc:if={isDelivery}>
                         <label class="field">Delivery address
-                            <input class={addressClass} type="text" name="addressLine" value={addressLine} onchange={handleField} autocomplete="street-address" />
+                            <input class={addressClass} type="text" name="addressLine" value={addressLine} onchange={handleField} onkeydown={handleEnterKey} autocomplete="street-address" />
                             <template lwc:if={errors.addressLine}><span class="err">{errors.addressLine}</span></template>
                         </label>
                         <label class="field">Pincode
-                            <input class={pincodeClass} type="text" inputmode="numeric" name="pincode" value={pincode} onchange={handleField} autocomplete="postal-code" />
+                            <input class={pincodeClass} type="text" inputmode="numeric" name="pincode" value={pincode} onchange={handleField} onkeydown={handleEnterKey} autocomplete="postal-code" />
                             <template lwc:if={errors.pincode}><span class="err">{errors.pincode}</span></template>
                         </label>
                     </template>
@@ -130,7 +130,7 @@
                         </template>
                     </fieldset>
                     <label class="field">Notes for the kitchen (optional)
-                        <input type="text" name="notes" value={notes} onchange={handleField} />
+                        <input type="text" name="notes" value={notes} onchange={handleField} onkeydown={handleEnterKey} />
                     </label>
                     <div class="bill">
                         <div class="bill-row"><span>Subtotal</span><span>{subtotalText}</span></div>
@@ -139,10 +139,10 @@
                         <div class="bill-row bill-total"><span>Estimated total</span><span>{estimatedTotalText}</span></div>
                     </div>
                     <div class="row cta">
-                        <button type="submit" class="btn grow" disabled={submitting}>{submitLabel}</button>
+                        <button type="button" class="btn grow" data-id="submit" onclick={handlePlaceOrder} disabled={submitting}>{submitLabel}</button>
                         <button type="button" class="btn btn-outline" onclick={goCart} disabled={submitting}>Back</button>
                     </div>
-                </form>
+                </div>
             </template>
 
             <!-- ============ ONLINE PAYMENT ============ -->

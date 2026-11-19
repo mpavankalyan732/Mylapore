@@ -28,7 +28,7 @@ async function choose(el, name, value) {
     await flush();
 }
 const submit = async (el) => {
-    q(el, 'form').dispatchEvent(new Event('submit', { cancelable: true }));
+    q(el, '[data-id="submit"]').click();
     await flush();
 };
 async function fillBasics(el) {
@@ -88,14 +88,14 @@ describe('c-restaurant-checkout', () => {
         placeOrder.mockReturnValue(new Promise((r) => (resolve = r)));
         const el = build();
         await fillBasics(el);
-        q(el, 'form').dispatchEvent(new Event('submit', { cancelable: true }));
-        q(el, 'form').dispatchEvent(new Event('submit', { cancelable: true }));
+        q(el, '[data-id="submit"]').click();
+        q(el, '[data-id="submit"]').click();
         await flush();
         expect(placeOrder).toHaveBeenCalledTimes(1);
-        expect(q(el, 'button[type=submit]').disabled).toBe(true);
+        expect(q(el, '[data-id="submit"]').disabled).toBe(true);
         resolve({ success: true, orderNumber: 'VR1' });
         await flush();
-        expect(q(el, 'button[type=submit]').disabled).toBe(false);
+        expect(q(el, '[data-id="submit"]').disabled).toBe(false);
     });
 
     test('delivery needs an address and a serviceable pincode', async () => {
@@ -169,5 +169,14 @@ describe('c-restaurant-checkout', () => {
         el.addEventListener('back', back);
         q(el, '.btn-link').click();
         expect(back).toHaveBeenCalled();
+    });
+
+    test('Enter in a text field submits through the button handler', async () => {
+        placeOrder.mockResolvedValue({ success: true, orderNumber: 'VR5' });
+        const el = build();
+        await fillBasics(el);
+        q(el, '[name="customerPhone"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        await flush();
+        expect(placeOrder).toHaveBeenCalledTimes(1);
     });
 });

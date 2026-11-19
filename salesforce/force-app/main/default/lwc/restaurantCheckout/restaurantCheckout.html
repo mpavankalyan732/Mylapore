@@ -1,5 +1,5 @@
 <template>
-    <form class="card stack" onsubmit={handleSubmit} novalidate aria-label="Checkout">
+    <div class="card stack" role="form" aria-label="Checkout">
         <div class="spread">
             <h2 class="heading">Checkout</h2>
             <button type="button" class="btn-link" onclick={handleBack}>Back to cart</button>
@@ -11,17 +11,17 @@
             <legend>Your details</legend>
             <label class="field">
                 <span>Name</span>
-                <input name="customerName" type="text" maxlength="80" autocomplete="name" value={customerName} onchange={handleField} class={nameClass} aria-invalid={nameInvalid} />
+                <input name="customerName" type="text" maxlength="80" autocomplete="name" value={customerName} onchange={handleField} onkeydown={handleEnterKey} class={nameClass} aria-invalid={nameInvalid} />
                 <template lwc:if={errors.customerName}><span class="err" role="alert">{errors.customerName}</span></template>
             </label>
             <label class="field">
                 <span>Mobile number</span>
-                <input name="customerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="98765 43210" value={customerPhone} onchange={handleField} class={phoneClass} aria-invalid={phoneInvalid} />
+                <input name="customerPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="98765 43210" value={customerPhone} onchange={handleField} onkeydown={handleEnterKey} class={phoneClass} aria-invalid={phoneInvalid} />
                 <template lwc:if={errors.customerPhone}><span class="err" role="alert">{errors.customerPhone}</span></template>
             </label>
             <label class="field">
                 <span>Email (optional)</span>
-                <input name="customerEmail" type="email" autocomplete="email" value={customerEmail} onchange={handleField} />
+                <input name="customerEmail" type="email" autocomplete="email" value={customerEmail} onchange={handleField} onkeydown={handleEnterKey} />
             </label>
         </fieldset>
 
@@ -38,20 +38,20 @@
             <template lwc:if={isDelivery}>
                 <label class="field">
                     <span>Delivery address</span>
-                    <input name="addressLine" type="text" maxlength="200" autocomplete="street-address" value={addressLine} onchange={handleField} class={addressClass} />
+                    <input name="addressLine" type="text" maxlength="200" autocomplete="street-address" value={addressLine} onchange={handleField} onkeydown={handleEnterKey} class={addressClass} />
                     <template lwc:if={errors.addressLine}><span class="err" role="alert">{errors.addressLine}</span></template>
                 </label>
                 <div class="two">
                     <label class="field">
                         <span>Pincode</span>
-                        <input name="pincode" type="text" inputmode="numeric" maxlength="6" autocomplete="postal-code" value={pincode} onchange={handleField} class={pincodeClass} />
+                        <input name="pincode" type="text" inputmode="numeric" maxlength="6" autocomplete="postal-code" value={pincode} onchange={handleField} onkeydown={handleEnterKey} class={pincodeClass} />
                         <template lwc:if={errors.pincode}><span class="err" role="alert">{errors.pincode}</span></template>
                         <template lwc:if={pincodeOk}><span class="ok" role="status">✓ We deliver to this pincode</span></template>
                         <template lwc:if={pincodeBad}><span class="err" role="alert">We do not deliver to this pincode yet</span></template>
                     </label>
                     <label class="field">
                         <span>Landmark (optional)</span>
-                        <input name="landmark" type="text" maxlength="100" value={landmark} onchange={handleField} />
+                        <input name="landmark" type="text" maxlength="100" value={landmark} onchange={handleField} onkeydown={handleEnterKey} />
                     </label>
                 </div>
             </template>
@@ -72,7 +72,7 @@
             </template>
             <label class="field">
                 <span>Order notes (optional)</span>
-                <textarea name="notes" rows="2" maxlength="300" onchange={handleField}>{notes}</textarea>
+            <textarea name="notes" rows="2" maxlength="300" onchange={handleField} onkeydown={handleEnterKey}>{notes}</textarea>
             </label>
         </fieldset>
 
@@ -84,6 +84,6 @@
         </div>
         <p class="muted small">The restaurant calculates the final total when the order is placed.</p>
 
-        <button type="submit" class="btn" disabled={submitting}>{submitLabel}</button>
-    </form>
+        <button type="button" class="btn" data-id="submit" onclick={handleSubmit} disabled={submitting}>{submitLabel}</button>
+    </div>
 </template>

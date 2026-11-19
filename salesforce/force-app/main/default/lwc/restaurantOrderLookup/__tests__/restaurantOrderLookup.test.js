@@ -28,7 +28,7 @@ async function type(el, name, value) {
 async function lookup(el) {
     await type(el, 'orderNumber', 'VR1');
     await type(el, 'phone', '9876543210');
-    q(el, 'form').dispatchEvent(new Event('submit', { cancelable: true }));
+    q(el, '[data-id="submit"]').click();
     await flush();
 }
 const cancelButton = (el) => [...el.shadowRoot.querySelectorAll('button')].find((b) => b.textContent === 'Cancel this order');
@@ -43,7 +43,7 @@ describe('c-restaurant-order-lookup', () => {
 
     test('requires both order number and phone', async () => {
         const el = build();
-        q(el, 'form').dispatchEvent(new Event('submit', { cancelable: true }));
+        q(el, '[data-id="submit"]').click();
         await flush();
         expect(getOrderDetails).not.toHaveBeenCalled();
         expect(q(el, '.alert-error').textContent).toContain('Enter your order number');
@@ -56,6 +56,16 @@ describe('c-restaurant-order-lookup', () => {
         expect(getOrderDetails).toHaveBeenCalledWith({ orderNumber: 'VR1', customerPhone: '9876543210' });
         expect(q(el, 'c-restaurant-order-details-view')).not.toBeNull();
         expect(cancelButton(el)).toBeDefined();
+    });
+
+    test('Enter in either lookup field runs the lookup', async () => {
+        getOrderDetails.mockResolvedValue(DETAILS);
+        const el = build();
+        await type(el, 'orderNumber', 'VR1');
+        await type(el, 'phone', '9876543210');
+        q(el, '[name="phone"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        await flush();
+        expect(getOrderDetails).toHaveBeenCalledWith({ orderNumber: 'VR1', customerPhone: '9876543210' });
     });
 
     test('an unknown order or wrong phone gives a generic not-found message', async () => {

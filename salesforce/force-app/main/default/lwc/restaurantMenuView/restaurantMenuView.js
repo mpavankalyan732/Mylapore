@@ -271,6 +271,14 @@ export default class RestaurantMenuView extends LightningElement {
         }
     }
 
+    handleEnterKey(event) {
+        if (event.key === 'Enter' && event.target?.type !== 'radio') {
+            event.preventDefault?.();
+            event.target?.blur?.();
+            this.handlePlaceOrder(event);
+        }
+    }
+
     validate() {
         const e = {};
         if (this.customerName.trim().length < 2) {
@@ -293,7 +301,7 @@ export default class RestaurantMenuView extends LightningElement {
     }
 
     async handlePlaceOrder(event) {
-        event.preventDefault();
+        event?.preventDefault?.();
         if (this.submitting) {
             return; // duplicate-click guard
         }
