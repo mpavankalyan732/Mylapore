@@ -135,19 +135,22 @@ public with sharing class RestaurantOrderSync {
         if (c.Name == null) {
             c.Name = phone;
         }
-        Database.upsert(c, Restaurant_Customer__c.Phone__c, true);
+        Database.upsert(c, Restaurant_Customer__c.Phone__c, true, AccessLevel.SYSTEM_MODE);
         return c.Id;
         }
 
         void upsertOrder(Restaurant_Order__c rec) {
-            Database.upsert(rec, Restaurant_Order__c.Order_Number__c, true);
+            Database.upsert(rec, Restaurant_Order__c.Order_Number__c, true, AccessLevel.SYSTEM_MODE);
         }
 
         void replaceItems(Id orderId, Id customerId, List<RestaurantOrderItem> items, String itemOutcome) {
         if (orderId == null) {
             return;
         }
-        delete [SELECT Id FROM Restaurant_Order_Item__c WHERE Restaurant_Order__c = :orderId];
+        List<Restaurant_Order_Item__c> existing = [SELECT Id FROM Restaurant_Order_Item__c WHERE Restaurant_Order__c = :orderId WITH SYSTEM_MODE];
+        if (!existing.isEmpty()) {
+            Database.delete(existing, true, AccessLevel.SYSTEM_MODE);
+        }
         List<Restaurant_Order_Item__c> rows = new List<Restaurant_Order_Item__c>();
         for (RestaurantOrderItem i : items == null ? new List<RestaurantOrderItem>() : items) {
             rows.add(new Restaurant_Order_Item__c(
@@ -162,15 +165,17 @@ public with sharing class RestaurantOrderSync {
                 Status__c = itemOutcome
             ));
         }
-        insert rows;
+        if (!rows.isEmpty()) {
+            Database.insert(rows, true, AccessLevel.SYSTEM_MODE);
+        }
         }
 
         void setItemOutcome(String orderNumber, String itemOutcome) {
             List<Restaurant_Order_Item__c> rows = new List<Restaurant_Order_Item__c>();
-            for (Restaurant_Order_Item__c r : [SELECT Id FROM Restaurant_Order_Item__c WHERE Restaurant_Order__r.Order_Number__c = :orderNumber]) {
+            for (Restaurant_Order_Item__c r : [SELECT Id FROM Restaurant_Order_Item__c WHERE Restaurant_Order__r.Order_Number__c = :orderNumber WITH SYSTEM_MODE]) {
                 rows.add(new Restaurant_Order_Item__c(Id = r.Id, Status__c = itemOutcome));
             }
-            for (Database.SaveResult sr : Database.update(rows, false)) {
+            for (Database.SaveResult sr : Database.update(rows, false, AccessLevel.SYSTEM_MODE)) {
                 if (!sr.isSuccess()) {
                     RestaurantOrderSync.lastError = 'item update: ' + sr.getErrors()[0].getStatusCode() + ' ' + sr.getErrors()[0].getMessage() + ' ' + sr.getErrors()[0].getFields();
                     System.debug(LoggingLevel.WARN, 'Restaurant order items were not updated: ' + RestaurantOrderSync.lastError);
