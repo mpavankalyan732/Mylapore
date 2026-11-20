@@ -3,7 +3,7 @@
         <div class="alert alert-error" role="alert">{value.message}</div>
     </template>
     <template lwc:else>
-        <div class="stack">
+        <div class="shell stack">
             <template lwc:if={info}><div class="alert alert-info" role="status">{info}</div></template>
             <template lwc:if={error}><div class="alert alert-error" role="alert">{error}</div></template>
 
@@ -14,36 +14,61 @@
                         <template for:each={value.warnings} for:item="w"><p key={w}>{w}</p></template>
                     </div>
                 </template>
-                <template lwc:if={isEmpty}><p class="muted">No matching dishes were found.</p></template>
+                <div class="search">
+                    <input type="search" class="search-input" placeholder={label.searchPlaceholder} aria-label={label.searchLabel} value={search} oninput={handleSearch} />
+                </div>
+                <template lwc:if={hasChips}>
+                    <div class="chips" role="group" aria-label={label.categories}>
+                        <template for:each={categoryChips} for:item="chip">
+                            <button key={chip.key} type="button" class={chip.cssClass} data-key={chip.key} aria-pressed={chip.selected} onclick={handleChip}>{chip.name}</button>
+                        </template>
+                    </div>
+                </template>
+                <template lwc:if={isEmpty}><p class="muted">{label.noMatches}</p></template>
                 <template for:each={groups} for:item="group">
-                    <section key={group.key} class="card stack">
-                        <div class="spread">
-                            <span class="strong">{group.title}</span>
-                            <span class="muted small">{group.countText}</span>
-                        </div>
+                    <section key={group.key} class="stack">
+                        <template lwc:if={group.title}>
+                            <div class="spread">
+                                <h3 class="group-title">{group.title}</h3>
+                                <span class="muted small">{group.countText}</span>
+                            </div>
+                        </template>
                         <ul class="list">
                             <template for:each={group.items} for:item="item">
                                 <li key={item.id} class="dish">
-                                    <template lwc:if={item.imageUrl}><img class="thumb" src={item.imageUrl} alt={item.name} loading="lazy" /></template>
-                                    <template lwc:else><div class="thumb thumb-empty" aria-hidden="true"></div></template>
-                                    <div class="grow">
-                                        <div class="strong">{item.name}</div>
-                                        <div class="muted small">{item.description}</div>
-                                        <div class="price">{item.priceText}</div>
-                                        <template lwc:if={item.unavailable}><span class="badge badge-bad">Currently unavailable</span></template>
+                                    <div class="photo">
+                                        <template lwc:if={item.imageUrl}>
+                                            <img class="photo-img" src={item.imageUrl} alt={item.name} loading="lazy" data-id={item.id} onerror={handleImageError} />
+                                        </template>
+                                        <template lwc:else><div class="photo-empty" aria-hidden="true">&#127859;</div></template>
                                     </div>
-                                    <template lwc:if={item.canAdd}>
-                                        <template lwc:if={item.inCart}>
-                                            <div class="stepper">
-                                                <button type="button" class="step-btn" data-id={item.id} onclick={handleDec} aria-label="Remove one">−</button>
-                                                <span class="qty">{item.quantity}</span>
-                                                <button type="button" class="step-btn" data-id={item.id} onclick={handleInc} disabled={item.atMax} aria-label="Add one more">+</button>
-                                            </div>
-                                        </template>
-                                        <template lwc:else>
-                                            <button type="button" class="btn btn-outline" data-id={item.id} onclick={handleAdd}>Add</button>
-                                        </template>
-                                    </template>
+                                    <div class="dish-body">
+                                        <div class="dish-name">
+                                            <span class="veg" title={label.vegetarian} role="img" aria-label={label.vegetarian}></span>
+                                            <span class="strong">{item.name}</span>
+                                        </div>
+                                        <template lwc:if={item.bestseller}><span class="badge badge-wait">{label.bestseller}</span></template>
+                                        <div class="muted small clamp">{item.description}</div>
+                                        <div class="dish-foot">
+                                            <span class="price">{item.priceText}</span>
+                                            <template lwc:if={item.unavailable}>
+                                                <span class="badge badge-bad">{label.unavailable}</span>
+                                                <button type="button" class="btn btn-outline" disabled>{label.add}</button>
+                                            </template>
+                                            <template lwc:else>
+                                                <template lwc:if={item.inCart}>
+                                                    <div class="stepper" role="group" aria-label={label.quantity}>
+                                                        <button type="button" class="step-btn" data-id={item.id} aria-label={item.decAria} onclick={handleDec}>&minus;</button>
+                                                        <span class="qty" aria-live="polite">{item.quantity}</span>
+                                                        <button type="button" class="step-btn" data-id={item.id} aria-label={item.incAria} onclick={handleAdd} disabled={item.atMax}>+</button>
+                                                    </div>
+                                                </template>
+                                                <template lwc:else>
+                                                    <button type="button" class="btn btn-outline" data-id={item.id} aria-label={item.addAria} onclick={handleAdd}>{label.add}</button>
+                                                </template>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </li>
                             </template>
                         </ul>
@@ -51,60 +76,70 @@
                     </section>
                 </template>
                 <template lwc:if={hasCart}>
-                    <div class="row cta">
-                        <button type="button" class="btn grow" onclick={goCart}>{cartButtonLabel}</button>
-                        <button type="button" class="btn btn-outline" onclick={handleClearCart}>Cancel</button>
+                    <div class="bar">
+                        <button type="button" class="btn bar-btn" onclick={goCart}>{cartBarText}</button>
+                        <span class="muted small">{label.cartBarNote}</span>
                     </div>
                 </template>
             </template>
 
             <!-- ============ CART ============ -->
             <template lwc:if={isCart}>
-                <section class="card stack">
-                    <div class="spread"><span class="strong">Your cart</span><span class="muted small">{cartCount} item(s)</span></div>
-                    <template lwc:if={cartEmpty}><p class="muted">Your cart is empty.</p></template>
+                <section class="panel stack">
+                    <h3 class="group-title">{label.cartTitle}</h3>
+                    <template lwc:if={cartEmpty}><p class="muted">{label.cartEmpty}</p></template>
                     <ul class="list">
                         <template for:each={cartLines} for:item="line">
-                            <li key={line.id} class="dish">
-                                <template lwc:if={line.imageUrl}><img class="thumb" src={line.imageUrl} alt={line.name} /></template>
-                                <div class="grow">
-                                    <div class="strong">{line.name}</div>
-                                    <div class="muted small">{line.unitText} each</div>
-                                    <button type="button" class="btn-link" data-id={line.id} onclick={handleRemove}>Remove</button>
+                            <li key={line.id} class="dish dish-cart">
+                                <template lwc:if={line.imageUrl}>
+                                    <img class="cart-photo" src={line.imageUrl} alt={line.name} data-id={line.id} onerror={handleImageError} />
+                                </template>
+                                <div class="dish-body">
+                                    <div class="spread">
+                                        <span class="strong">{line.name}</span>
+                                        <span class="price">{line.totalText}</span>
+                                    </div>
+                                    <div class="muted small">{line.unitText}</div>
+                                    <input type="text" class="note" maxlength="200" data-id={line.id} value={line.notes}
+                                        placeholder={label.notesPlaceholder} aria-label={label.notesLabel} onchange={handleNote} />
+                                    <div class="spread">
+                                        <div class="stepper" role="group" aria-label={label.quantity}>
+                                            <button type="button" class="step-btn" data-id={line.id} aria-label={line.decAria} onclick={handleDec}>&minus;</button>
+                                            <span class="qty" aria-live="polite">{line.quantity}</span>
+                                            <button type="button" class="step-btn" data-id={line.id} aria-label={line.incAria} onclick={handleAdd} disabled={line.atMax}>+</button>
+                                        </div>
+                                        <button type="button" class="btn-link" data-id={line.id} aria-label={line.removeAria} onclick={handleRemove}>{label.remove}</button>
+                                    </div>
                                 </div>
-                                <div class="stepper">
-                                    <button type="button" class="step-btn" data-id={line.id} onclick={handleDec} aria-label="Remove one">−</button>
-                                    <span class="qty">{line.quantity}</span>
-                                    <button type="button" class="step-btn" data-id={line.id} onclick={handleInc} disabled={line.atMax} aria-label="Add one more">+</button>
-                                </div>
-                                <span class="price">{line.totalText}</span>
                             </li>
                         </template>
                     </ul>
-                    <div class="bill"><div class="bill-row bill-total"><span>Subtotal</span><span>{subtotalText}</span></div></div>
-                    <p class="muted small">Tax and fees are added at checkout. The restaurant confirms the final amount.</p>
+                    <div class="bill"><div class="bill-row bill-total"><span>{label.cartEstimate}</span><span>{subtotalText}</span></div></div>
+                    <p class="muted small">{label.cartEstimateNote}</p>
                     <div class="row cta">
-                        <button type="button" class="btn grow" onclick={goCheckout} disabled={cartEmpty}>Go to checkout</button>
-                        <button type="button" class="btn btn-outline" onclick={goMenu}>Add more</button>
-                        <button type="button" class="btn btn-outline" onclick={handleClearCart}>Cancel</button>
+                        <button type="button" class="btn grow" onclick={goDetails} disabled={cartEmpty}>{label.continue}</button>
+                        <button type="button" class="btn btn-outline" onclick={goMenu}>{label.addMore}</button>
                     </div>
+                    <button type="button" class="btn-link" onclick={handleClearCart}>{label.clearCart}</button>
                 </section>
             </template>
 
-            <!-- ============ CHECKOUT ============ -->
-            <template lwc:if={isCheckout}>
-                <div class="card stack" role="form" aria-label="Checkout">
-                    <div class="strong">Checkout</div>
-                    <label class="field">Your name
-                        <input class={nameClass} type="text" name="customerName" value={customerName} onchange={handleField} onkeydown={handleEnterKey} autocomplete="name" />
-                        <template lwc:if={errors.customerName}><span class="err">{errors.customerName}</span></template>
+            <!-- ============ DETAILS ============ -->
+            <template lwc:if={isDetails}>
+                <div class="panel stack" role="form" aria-label={label.detailsTitle}>
+                    <h3 class="group-title">{label.detailsTitle}</h3>
+                    <label class="field">{label.name}
+                        <input class={nameClass} type="text" name="customerName" value={customerName} onchange={handleField} onkeydown={handleReviewKeydown}
+                            autocomplete="name" aria-invalid={nameInvalid} />
+                        <template lwc:if={errors.customerName}><span class="err" role="alert">{errors.customerName}</span></template>
                     </label>
-                    <label class="field">Mobile number
-                        <input class={phoneClass} type="tel" name="customerPhone" value={customerPhone} onchange={handleField} onkeydown={handleEnterKey} autocomplete="tel" />
-                        <template lwc:if={errors.customerPhone}><span class="err">{errors.customerPhone}</span></template>
+                    <label class="field">{label.mobile}
+                        <input class={phoneClass} type="tel" inputmode="numeric" name="customerPhone" value={customerPhone} onchange={handleField} onkeydown={handleReviewKeydown}
+                            autocomplete="tel" aria-invalid={phoneInvalid} />
+                        <template lwc:if={errors.customerPhone}><span class="err" role="alert">{errors.customerPhone}</span></template>
                     </label>
                     <fieldset class="field">
-                        <legend>How would you like your order?</legend>
+                        <legend>{label.orderType}</legend>
                         <template for:each={fulfilmentOptions} for:item="o">
                             <label key={o.value} class={o.cssClass}>
                                 <input type="radio" name="fulfilment" value={o.value} checked={o.checked} onchange={handleField} /> {o.label}
@@ -112,70 +147,40 @@
                         </template>
                     </fieldset>
                     <template lwc:if={isDelivery}>
-                        <label class="field">Delivery address
-                            <input class={addressClass} type="text" name="addressLine" value={addressLine} onchange={handleField} onkeydown={handleEnterKey} autocomplete="street-address" />
-                            <template lwc:if={errors.addressLine}><span class="err">{errors.addressLine}</span></template>
+                        <label class="field">{label.address}
+                            <input class={addressClass} type="text" name="addressLine" value={addressLine} onchange={handleField} onkeydown={handleReviewKeydown}
+                                autocomplete="street-address" aria-invalid={addressInvalid} />
+                            <template lwc:if={errors.addressLine}><span class="err" role="alert">{errors.addressLine}</span></template>
                         </label>
-                        <label class="field">Pincode
-                            <input class={pincodeClass} type="text" inputmode="numeric" name="pincode" value={pincode} onchange={handleField} onkeydown={handleEnterKey} autocomplete="postal-code" />
-                            <template lwc:if={errors.pincode}><span class="err">{errors.pincode}</span></template>
+                        <label class="field">{label.pincode}
+                            <input class={pincodeClass} type="text" inputmode="numeric" name="pincode" value={pincode} onchange={handleField} onkeydown={handleReviewKeydown}
+                                autocomplete="postal-code" aria-invalid={pincodeInvalid} />
+                            <template lwc:if={errors.pincode}><span class="err" role="alert">{errors.pincode}</span></template>
                         </label>
                     </template>
-                    <fieldset class="field">
-                        <legend>Payment</legend>
-                        <template for:each={paymentOptions} for:item="o">
-                            <label key={o.value} class={o.cssClass}>
-                                <input type="radio" name="paymentMethod" value={o.value} checked={o.checked} onchange={handleField} /> {o.label}
-                            </label>
-                        </template>
-                    </fieldset>
-                    <label class="field">Notes for the kitchen (optional)
-                        <input type="text" name="notes" value={notes} onchange={handleField} onkeydown={handleEnterKey} />
-                    </label>
-                    <div class="bill">
-                        <div class="bill-row"><span>Subtotal</span><span>{subtotalText}</span></div>
-                        <template lwc:if={showTax}><div class="bill-row"><span>Tax</span><span>{taxText}</span></div></template>
-                        <template lwc:if={showDeliveryFee}><div class="bill-row"><span>Delivery fee</span><span>{deliveryFeeText}</span></div></template>
-                        <div class="bill-row bill-total"><span>Estimated total</span><span>{estimatedTotalText}</span></div>
-                    </div>
+                    <template lwc:if={showPaymentChoice}>
+                        <fieldset class="field">
+                            <legend>{label.payHow}</legend>
+                            <template for:each={paymentOptions} for:item="o">
+                                <label key={o.value} class={o.cssClass}>
+                                    <input type="radio" name="paymentMethod" value={o.value} checked={o.checked} onchange={handleField} /> {o.label}
+                                </label>
+                            </template>
+                        </fieldset>
+                    </template>
                     <div class="row cta">
-                        <button type="button" class="btn grow" data-id="submit" onclick={handlePlaceOrder} disabled={submitting}>{submitLabel}</button>
-                        <button type="button" class="btn btn-outline" onclick={goCart} disabled={submitting}>Back</button>
+                        <button type="button" data-action="review" class="btn grow" onclick={handleReview} disabled={submitting}>{reviewLabel}</button>
+                        <button type="button" class="btn btn-outline" onclick={handleBackToCart} disabled={submitting}>{label.back}</button>
                     </div>
                 </div>
             </template>
 
-            <!-- ============ ONLINE PAYMENT ============ -->
-            <template lwc:if={isPay}>
-                <section class="card stack">
+            <!-- ============ PAYMENT ============ -->
+            <template lwc:if={isPayment}>
+                <section class="panel stack">
                     <div class="spread">
-                        <span class="strong">Order {order.orderNumber}</span>
-                        <span class="badge badge-wait">Waiting for payment</span>
-                    </div>
-                    <p class="muted">Pay securely with Razorpay (UPI, cards, netbanking). This card updates by itself once the payment is confirmed.</p>
-                    <div class="bill"><div class="bill-row bill-total"><span>Amount to pay</span><span>{orderTotalText}</span></div></div>
-                    <template lwc:if={payUrl}>
-                        <a class="btn" href={payUrl} target="_blank" rel="noopener noreferrer">Pay now</a>
-                    </template>
-                    <div class="row cta">
-                        <button type="button" class="btn btn-outline grow" onclick={handleCheckPayment}>I have paid</button>
-                        <button type="button" class="btn btn-outline" onclick={handleCancelOrder} disabled={cancelling}>Cancel order</button>
-                    </div>
-                </section>
-            </template>
-
-            <!-- ============ SUCCESS ============ -->
-            <template lwc:if={isDone}>
-                <section class="card stack">
-                    <template lwc:if={cancelled}>
-                        <div class="alert alert-error" role="status"><span class="strong">{doneTitle}</span><p>{doneMessage}</p></div>
-                    </template>
-                    <template lwc:else>
-                        <div class="alert alert-ok" role="status"><span class="strong">✓ {doneTitle}</span><p>{doneMessage}</p></div>
-                    </template>
-                    <div class="spread">
-                        <span class="strong">Order {order.orderNumber}</span>
-                        <span class={doneBadgeClass}>{doneBadge}</span>
+                        <h3 class="group-title">{orderTitle}</h3>
+                        <span class="badge badge-wait">{label.waitingCard}</span>
                     </div>
                     <template lwc:if={hasOrderLines}>
                         <ul class="list">
@@ -185,13 +190,96 @@
                         </ul>
                     </template>
                     <div class="bill">
-                        <div class="bill-row bill-total"><span>Total</span><span>{orderTotalText}</span></div>
+                        <div class="bill-row"><span>{label.subtotal}</span><span>{orderSubtotalText}</span></div>
+                        <template lwc:if={showOrderTax}><div class="bill-row"><span>{label.tax}</span><span>{orderTaxText}</span></div></template>
+                        <template lwc:if={showOrderFee}><div class="bill-row"><span>{label.deliveryFee}</span><span>{orderFeeText}</span></div></template>
+                        <div class="bill-row bill-total"><span>{label.amountToPay}</span><span>{orderTotalText}</span></div>
                     </div>
-                    <template lwc:if={paymentText}><p class="muted small">{paymentText}</p></template>
-                    <template lwc:if={trackUrl}>
-                        <a class="btn-link" href={trackUrl} target="_blank" rel="noopener noreferrer">Track this order online</a>
+
+                    <template lwc:if={chooseMethod}>
+                        <h4 class="sub">{label.reviewTitle}</h4>
+                        <div class="pay-options">
+                            <button type="button" class="pay-option" onclick={handlePayCard} disabled={starting}>
+                                <span class="strong">{label.payCard}</span><span class="muted small">{label.payCardHint}</span>
+                            </button>
+                            <button type="button" class="pay-option" onclick={handlePayUpi} disabled={starting}>
+                                <span class="strong">{label.payUpi}</span><span class="muted small">{label.payUpiHint}</span>
+                            </button>
+                        </div>
                     </template>
-                    <button type="button" class="btn btn-outline" onclick={handleOrderMore}>Order more</button>
+
+                    <template lwc:if={isCardWait}>
+                        <div class="wait" role="status" aria-live="polite">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <div><div class="strong">{label.waitingCard}</div><div class="muted small">{label.waitingCardHint}</div></div>
+                        </div>
+                        <template lwc:if={paymentUrl}>
+                            <a class="btn" href={paymentUrl} target="_blank" rel="noopener noreferrer">{label.openPayment}</a>
+                        </template>
+                    </template>
+
+                    <template lwc:if={isQrWait}>
+                        <div class="qr-box" role="status" aria-live="polite">
+                            <div class="strong">{label.scanTitle}</div>
+                            <template lwc:if={qrImageUrl}><img class="qr" src={qrImageUrl} alt={qrAlt} /></template>
+                            <div class="price">{scanAmountText}</div>
+                            <div class="muted small">{countdownText}</div>
+                            <div class="muted small"><span class="spinner" aria-hidden="true"></span> {label.waitingUpi}</div>
+                        </div>
+                    </template>
+
+                    <div class="row cta">
+                        <template lwc:if={payMode}>
+                            <button type="button" class="btn btn-outline grow" onclick={handleChangeMethod}>{label.changeMethod}</button>
+                        </template>
+                        <button type="button" class="btn btn-outline" onclick={handleCancelOrder} disabled={cancelling}>{label.cancelOrder}</button>
+                    </div>
+                </section>
+            </template>
+
+            <!-- ============ FAILED / EXPIRED ============ -->
+            <template lwc:if={isRetry}>
+                <section class="panel stack">
+                    <div class="alert alert-error" role="alert"><span class="strong">{retryTitle}</span><p>{retryBody}</p></div>
+                    <div class="spread"><span class="strong">{orderTitle}</span><span>{orderTotalText}</span></div>
+                    <div class="row cta">
+                        <button type="button" class="btn grow" onclick={handleTryAgain} disabled={starting}>{label.tryAgain}</button>
+                        <button type="button" class="btn btn-outline" onclick={handleCancelOrder} disabled={cancelling}>{label.cancelOrder}</button>
+                    </div>
+                </section>
+            </template>
+
+            <!-- ============ SUCCESS ============ -->
+            <template lwc:if={isSuccess}>
+                <section class="panel stack">
+                    <template lwc:if={showCancelled}>
+                        <div class="alert alert-error" role="status"><span class="strong">{label.cancelledTitle}</span><p>{cancelledBody}</p></div>
+                    </template>
+                    <template lwc:if={showPaidSuccess}>
+                        <div class="success" role="status">
+                            <span class="tick" aria-hidden="true">&#10003;</span>
+                            <div><div class="strong">{label.successTitle}</div><div class="small">{label.successPaid}</div></div>
+                        </div>
+                    </template>
+                    <template lwc:if={showCounterSuccess}>
+                        <div class="success" role="status">
+                            <span class="tick" aria-hidden="true">&#10003;</span>
+                            <div><div class="strong">{label.successTitle}</div><div class="small">{label.successCounter}</div></div>
+                        </div>
+                    </template>
+                    <div class="spread"><span class="strong">{orderTitle}</span></div>
+                    <template lwc:if={hasOrderLines}>
+                        <ul class="list">
+                            <template for:each={orderLines} for:item="l">
+                                <li key={l.key} class="spread"><span>{l.text}</span><span class="price">{l.totalText}</span></li>
+                            </template>
+                        </ul>
+                    </template>
+                    <div class="bill"><div class="bill-row bill-total"><span>{totalLabel}</span><span>{orderTotalText}</span></div></div>
+                    <template lwc:if={trackUrl}>
+                        <a class="btn-link" href={trackUrl} target="_blank" rel="noopener noreferrer">{label.track}</a>
+                    </template>
+                    <button type="button" class="btn btn-outline" onclick={handleOrderMore}>{label.orderMore}</button>
                 </section>
             </template>
         </div>
