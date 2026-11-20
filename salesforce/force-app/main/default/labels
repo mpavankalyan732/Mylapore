@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Mylapore_Public_API_Base_Url</fullName>
+        <categories>Restaurant</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Mylapore public API base URL for guest checkout</shortDescription>
+        <value>https://mylapore-api.onrender.com/api/v1/public/chat</value>
+    </labels>
+</CustomLabels>

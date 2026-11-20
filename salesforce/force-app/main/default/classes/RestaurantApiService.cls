@@ -51,6 +51,13 @@ public with sharing class RestaurantApiService {
         if (!problems.isEmpty()) {
             throw new RestaurantApiException(400, 'VALIDATION_ERROR', String.join(problems, ' '));
         }
+        Map<String, Object> body = orderPayload(req);
+        Map<String, String> headers = new Map<String, String>{ 'Idempotency-Key' => idempotencyKey(req) };
+        return RestaurantApiMapper.orderResponse(send('POST', '/agent/orders', JSON.serialize(body), headers));
+    }
+
+    /** Shared, price-free order payload used by the keyed agent route and the guest-safe public route. */
+    public static Map<String, Object> orderPayload(RestaurantOrderRequest req) {
         Map<String, Object> body = new Map<String, Object>();
         List<Object> items = new List<Object>();
         for (RestaurantOrderItem i : req.items) {
@@ -78,8 +85,47 @@ public with sharing class RestaurantApiService {
         if (String.isNotBlank(req.notes)) {
             body.put('notes', req.notes.trim());
         }
-        Map<String, String> headers = new Map<String, String>{ 'Idempotency-Key' => idempotencyKey(req) };
-        return RestaurantApiMapper.orderResponse(send('POST', '/agent/orders', JSON.serialize(body), headers));
+        if (req.deferCheckout == true) {
+            body.put('deferCheckout', true);
+        }
+        return body;
+    }
+
+    /** Starts CARD (payment link) or UPI_QR payment for an unpaid online order. Ownership = the order's phone number. */
+    public static RestaurantPaymentStart startPayment(String orderNumber, String customerPhone, String method) {
+        String m = normaliseEnum(method);
+        if (m != 'CARD' && m != 'UPI_QR') {
+            throw new RestaurantApiException(400, 'VALIDATION_ERROR', 'Payment method must be CARD or UPI_QR.');
+        }
+        lookupBody(orderNumber, customerPhone); // validates both
+        // The order number is in the URL. The API rejects unknown body properties, so send only phone + method.
+        Map<String, Object> body = new Map<String, Object>{ 'customerPhone' => normalisePhone(customerPhone), 'method' => m };
+        Map<String, Object> r = send('POST', '/agent/orders/' + EncodingUtil.urlEncode(orderNumber.trim(), 'UTF-8') + '/payment', JSON.serialize(body), null);
+        RestaurantPaymentStart s = new RestaurantPaymentStart();
+        s.success = true;
+        s.orderNumber = RestaurantApiMapper.str(r, 'orderNumber');
+        s.method = RestaurantApiMapper.str(r, 'method');
+        s.paymentUrl = RestaurantApiMapper.str(r, 'paymentUrl');
+        s.qrImageUrl = RestaurantApiMapper.str(r, 'qrImageUrl');
+        s.expiresAt = RestaurantApiMapper.str(r, 'expiresAt');
+        return s;
+    }
+
+    /** PAID only when the backend recorded a verified Razorpay webhook. */
+    public static RestaurantPaymentStatus getPaymentStatus(String orderNumber, String customerPhone) {
+        lookupBody(orderNumber, customerPhone); // validates both
+        String path = '/agent/orders/' + EncodingUtil.urlEncode(orderNumber.trim(), 'UTF-8') + '/payment-status?phone=' + EncodingUtil.urlEncode(normalisePhone(customerPhone), 'UTF-8');
+        Map<String, Object> r = send('GET', path, null, null);
+        RestaurantPaymentStatus s = new RestaurantPaymentStatus();
+        s.success = true;
+        s.orderNumber = RestaurantApiMapper.str(r, 'orderNumber');
+        s.status = RestaurantApiMapper.str(r, 'status');
+        s.orderStatus = RestaurantApiMapper.str(r, 'orderStatus');
+        s.amount = RestaurantApiMapper.dec(r, 'amount');
+        s.currencyCode = RestaurantApiMapper.str(r, 'currency');
+        s.paidAt = RestaurantApiMapper.str(r, 'paidAt');
+        s.expiresAt = RestaurantApiMapper.str(r, 'expiresAt');
+        return s;
     }
 
     public static RestaurantOrderDetails getOrderDetails(String orderNumber, String customerPhone) {
@@ -295,11 +341,13 @@ public with sharing class RestaurantApiService {
         try {
             res = new Http().send(req);
         } catch (System.CalloutException e) {
-            // Timeouts and connectivity problems. Log the class of failure only (no URL, headers or body).
-            System.debug(LoggingLevel.ERROR, 'Restaurant API unreachable: ' + method + ' ' + path.substringBefore('?'));
-            throw new RestaurantApiException(0, 'UNREACHABLE', 'The restaurant system could not be reached. Please try again shortly.');
+            // Include the actual exception for Setup debug logs, but never include request headers or body.
+            System.debug(LoggingLevel.ERROR, 'Restaurant API callout failed (' + e.getTypeName() + '): ' + e.getMessage());
+            RestaurantApiException failure = new RestaurantApiException(0, 'UNREACHABLE', 'The restaurant system could not be reached. Please try again shortly.');
+            failure.errorType = e.getTypeName();
+            throw failure;
         }
-        Map<String, Object> parsed = parse(res.getBody());
+        Map<String, Object> parsed = parseResponse(res.getBody());
         Integer status = res.getStatusCode();
         if (status >= 200 && status < 300) {
             return parsed;
@@ -309,7 +357,7 @@ public with sharing class RestaurantApiService {
     }
 
     @TestVisible
-    private static Map<String, Object> parse(String body) {
+    public static Map<String, Object> parseResponse(String body) {
         if (String.isBlank(body)) {
             return new Map<String, Object>();
         }

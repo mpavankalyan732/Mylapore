@@ -581,8 +581,9 @@ export default class RestaurantMenuView extends LightningElement {
                 this.stopTimers();
                 this.show('expired');
             }
-        } catch {
-            // transient network or cold-start problems: keep polling until the QR / link expires
+        } catch (err) {
+            // Keep polling after a transient failure, and show the backend/Apex error in the card.
+            this.error = parseApexError(err).message;
         } finally {
             this.checking = false;
         }

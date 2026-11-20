@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types><members>*</members><name>ApexClass</name></types>
-    <types><members>Restaurant_Order__c</members><name>CustomObject</name></types>
+    <types><members>Restaurant_Order__c</members><members>Restaurant_Customer__c</members><members>Restaurant_Order_Item__c</members><name>CustomObject</name></types>
+    <types><members>Mylapore_Public_API_Base_Url</members><name>CustomLabel</name></types>
+    <types><members>Mylapore_Public_API</members><name>RemoteSiteSetting</name></types>
     <types><members>*</members><name>LightningComponentBundle</name></types>
     <types><members>*</members><name>LightningTypeBundle</name></types>
     <types><members>restaurantImages</members><name>StaticResource</name></types>

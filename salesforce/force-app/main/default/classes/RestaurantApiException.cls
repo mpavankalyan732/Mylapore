@@ -7,6 +7,8 @@ public class RestaurantApiException extends Exception {
     public Integer statusCode;
     /** Machine-readable code, e.g. ITEM_UNAVAILABLE, DELIVERY_OUT_OF_AREA, NOT_FOUND, UNREACHABLE. */
     public String errorCode;
+    /** Apex exception type for diagnostics; not included in the customer-facing message. */
+    public String errorType;
     /** Extra fields from the error body, e.g. itemIds for ITEM_UNAVAILABLE. */
     public Map<String, Object> details = new Map<String, Object>();
 

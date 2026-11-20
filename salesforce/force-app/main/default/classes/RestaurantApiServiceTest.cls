@@ -248,6 +248,7 @@ private class RestaurantApiServiceTest {
         } catch (RestaurantApiException e) {
             System.assertEquals(0, e.statusCode);
             System.assertEquals('UNREACHABLE', e.errorCode);
+            System.assertEquals('System.CalloutException', e.errorType);
             System.assert(!e.getMessage().contains('timed out'), 'internal details are not leaked');
         }
     }

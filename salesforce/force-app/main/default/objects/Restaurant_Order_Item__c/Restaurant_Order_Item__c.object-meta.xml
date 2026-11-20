@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Restaurant Order Item</label>
+    <pluralLabel>Restaurant Order Items</pluralLabel>
+    <nameField>
+        <label>Item Record</label>
+        <type>AutoNumber</type>
+        <displayFormat>ROI-{000000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ControlledByParent</sharingModel>
+    <enableReports>true</enableReports>
+    <description>One dish line of a Restaurant Order. Prices are the backend's, never the browser's.</description>
+</CustomObject>

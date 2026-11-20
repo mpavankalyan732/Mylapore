@@ -85,7 +85,10 @@ public class RestaurantApiMock implements HttpCalloutMock {
         if (throwCalloutException) {
             throw new CalloutException('Read timed out');
         }
-        String path = req.getEndpoint().substringAfter('callout:Restaurant_API');
+        String endpoint = req.getEndpoint();
+        String path = endpoint.contains('/api/v1/public/chat')
+            ? endpoint.substringAfter('/api/v1/public/chat')
+            : endpoint.substringAfter('callout:Restaurant_API');
         // Several stubs can match one request (e.g. /agent/orders and /agent/orders/details): the most specific wins.
         String best;
         for (String key : overrides.keySet()) {
@@ -127,6 +130,15 @@ public class RestaurantApiMock implements HttpCalloutMock {
             return CANCELLED;
         }
         if (method == 'POST' && path.startsWith('/agent/orders')) {
+            return ORDER;
+        }
+        if (method == 'POST' && path.startsWith('/orders/') && path.endsWith('/payment')) {
+            return '{"orderNumber":"VR261111-AB12CD","method":"CARD","paymentUrl":"https://pay.example.com/x","expiresAt":"2026-11-17T10:15:00.000Z"}';
+        }
+        if (method == 'GET' && path.startsWith('/orders/') && path.contains('/payment-status')) {
+            return '{"status":"PENDING_PAYMENT","amount":189,"paidAt":null}';
+        }
+        if (method == 'POST' && path.equals('/orders')) {
             return ORDER;
         }
         if (method == 'POST' && path.startsWith('/agent/reservations/details')) {
