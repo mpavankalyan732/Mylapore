@@ -8,7 +8,7 @@ import { CreateReservationDto, ReservationsService } from '../reservations/reser
 import { CreateAgentOrderDto, MenuQueryDto } from './agent.dto';
 import { mapCategory, mapItem, RESERVATION_MESSAGE, STATUS_MESSAGE, toRupees } from './agent.mapper';
 
-type FullOrder = Prisma.OrderGetPayload<{ include: { items: true; customer: true } }>;
+type FullOrder = Prisma.OrderGetPayload<{ include: { items: true; customer: true; statusEvents: true } }>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -112,6 +112,7 @@ export class AgentService {
       fulfilment: o.fulfilment,
       createdAt: o.createdAt.toISOString(),
       confirmedAt: o.confirmedAt?.toISOString() ?? null,
+      timeline: (o.statusEvents ?? []).map((e) => ({ status: e.status, at: e.at.toISOString() })),
       customerName: o.customer.name,
       deliveryPincode: o.deliveryPincode,
       deliveryAddress: (o.deliveryAddress as Record<string, string> | null) ?? null,
@@ -135,7 +136,7 @@ export class AgentService {
     if (!key || key.length < 8 || key.length > 100) throw new BadRequestException('Idempotency-Key header (or idempotencyKey, 8-100 chars) is required');
     const { idempotencyKey: _ignored, deferCheckout, ...orderDto } = dto; // eslint-disable-line @typescript-eslint/no-unused-vars
     const res = await this.orders.create(orderDto, key, undefined, { deferCheckout }); // same validation, pricing and availability rules as the website
-    const full = await this.prisma.order.findUniqueOrThrow({ where: { orderNumber: res.orderNumber }, include: { items: true, customer: true } });
+    const full = await this.prisma.order.findUniqueOrThrow({ where: { orderNumber: res.orderNumber }, include: { items: true, customer: true, statusEvents: { orderBy: { at: 'asc' } } } });
     const mapped = this.mapOrder(full);
     return {
       ...mapped,

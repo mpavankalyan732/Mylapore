@@ -19,6 +19,8 @@ const nextConfig = {
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' }, // allows Google sign-in popups
         ],
       },
+      // Pre-optimised dish photos (scripts/make-dish-images.mjs). Same file name after a re-run, so revalidate weekly rather than immutable.
+      { source: '/dishes/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' }] },
       { source: '/icons/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
       { source: '/menu/:file*.jpg', headers: [{ key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' }] },
     ];

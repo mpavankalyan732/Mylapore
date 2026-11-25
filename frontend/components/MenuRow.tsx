@@ -1,5 +1,5 @@
 'use client';
-import Image from 'next/image';
+import DishImage from './DishImage';
 import { MenuItem, rupees } from '@/lib/api';
 import { VegMark } from './Header';
 import { useLang, useShop } from './Providers';
@@ -27,7 +27,7 @@ export default function MenuRow({ item, priority = false }: { item: MenuItem; pr
       </div>
       <div className="mrow-media">
         <button className="mrow-img" onClick={() => openSheet(item)} aria-label={`View ${name}`}>
-          <Image src={item.imageUrl} alt={name} fill priority={priority} sizes="156px" />
+          <DishImage item={item} alt={name} fill priority={priority} sizes="156px" />
         </button>
         <div className="add-overlay"><QtyStepper item={item} size="sm" name={name} variant="overlay" /></div>
       </div>

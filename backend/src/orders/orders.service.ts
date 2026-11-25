@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './orders.dto';
 import { computeTotals, normalisePhone } from './pricing';
 
-const orderInclude = { items: true, customer: true } satisfies Prisma.OrderInclude;
+const orderInclude = { items: true, customer: true, statusEvents: { orderBy: { at: 'asc' } } } satisfies Prisma.OrderInclude;
 type FullOrder = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
 @Injectable()
@@ -30,6 +30,9 @@ export class OrdersService {
     // 1. Duplicate submit: same key returns the same order instead of creating another.
     const existing = await this.prisma.order.findUnique({ where: { idempotencyKey }, include: orderInclude });
     if (existing) return this.respond(existing, true, opts.deferCheckout);
+
+    // 1b. Online payment must be possible before we create anything.
+    if (dto.paymentMethod === 'ONLINE') this.payments.assertOnlineAvailable();
 
     // 2. Fulfilment / payment rules
     const pincodes = (this.config.get<string>('SERVICE_PINCODES') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -91,6 +94,7 @@ export class OrdersService {
             deliveryAddress: dto.address ? { ...dto.address } : undefined,
             deliveryPincode: dto.address?.pincode,
             items: { create: lines.map((l) => ({ ...l, lineTotalPaise: l.unitPricePaise * l.quantity })) },
+            statusEvents: { create: { status: isCod ? 'CONFIRMED' : 'PENDING_PAYMENT' } },
           },
           include: orderInclude,
         });
@@ -116,7 +120,16 @@ export class OrdersService {
   private async respond(order: FullOrder, replay: boolean, deferCheckout = false) {
     let checkoutUrl: string | undefined;
     if (!deferCheckout && order.status === 'PENDING_PAYMENT' && order.paymentMethod === 'ONLINE') {
-      checkoutUrl = (await this.payments.ensureCheckout(order.id)).checkoutUrl;
+      try {
+        checkoutUrl = (await this.payments.ensureCheckout(order.id)).checkoutUrl;
+      } catch (e) {
+        // The provider failed after the order was saved. Close it so an unpaid order is not left behind and a retry starts clean.
+        await this.prisma.$transaction(async (tx) => {
+          const res = await tx.order.updateMany({ where: { id: order.id, status: 'PENDING_PAYMENT' }, data: { status: 'PAYMENT_FAILED', paymentStatus: 'FAILED' } });
+          if (res.count > 0) await tx.orderStatusEvent.create({ data: { orderId: order.id, status: 'PAYMENT_FAILED' } });
+        });
+        throw e;
+      }
     }
     return { ...this.view(order), lookupToken: order.lookupToken, checkoutUrl, replay };
   }
@@ -140,6 +153,8 @@ export class OrdersService {
       deliveryFeePaise: o.deliveryFeePaise,
       totalPaise: o.totalPaise,
       createdAt: o.createdAt,
+      /** Real status changes with their times (oldest first). The tracker shows these, never a timer. */
+      timeline: (o.statusEvents ?? []).map((e) => ({ status: e.status, at: e.at })),
       items: o.items.map((i) => ({ name: i.nameSnapshot, quantity: i.quantity, unitPricePaise: i.unitPricePaise, lineTotalPaise: i.lineTotalPaise })),
     };
   }
@@ -195,6 +210,7 @@ export class OrdersService {
       // Compare-and-set on the previous status so concurrent updates cannot both win.
       const res = await tx.order.updateMany({ where: { id, status: order.status }, data: { status: to } });
       if (res.count === 0) throw new ConflictException({ code: 'STATUS_CHANGED', message: 'Order was updated by someone else' });
+      await tx.orderStatusEvent.create({ data: { orderId: id, status: to } });
       const fresh = await tx.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
       await this.outbox.enqueue(tx, 'ORDER', id, 'ORDER_STATUS_CHANGED', this.snapshot(fresh));
       return fresh;
@@ -260,6 +276,7 @@ export class OrdersService {
       // Compare-and-set so a kitchen status change racing with this cancel cannot both win.
       const res = await tx.order.updateMany({ where: { id: order.id, status: order.status }, data: { status: 'CANCELLED', paymentStatus } });
       if (res.count === 0) throw new ConflictException({ code: 'STATUS_CHANGED', message: 'The order changed while cancelling. Please check its status and try again.' });
+      await tx.orderStatusEvent.create({ data: { orderId: order.id, status: 'CANCELLED' } });
       await tx.payment.updateMany({ where: { orderId: order.id, status: 'PENDING' }, data: { status: 'EXPIRED' } });
       const fresh = await tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderInclude });
       await this.outbox.enqueue(tx, 'ORDER', order.id, 'ORDER_CANCELLED', this.snapshot(fresh));

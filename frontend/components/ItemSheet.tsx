@@ -1,5 +1,5 @@
 'use client';
-import Image from 'next/image';
+import DishImage from './DishImage';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { rupees } from '@/lib/api';
@@ -41,7 +41,7 @@ export default function ItemSheet() {
     <div className="sheet-back" onClick={closeSheet}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={name} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
         <button className="modal-x" onClick={closeSheet} aria-label="Close"><CloseIcon /></button>
-        <div className="sheet-photo"><Image src={sheet.imageUrl} alt={name} fill sizes="(max-width: 700px) 100vw, 460px" /></div>
+        <div className="sheet-photo"><DishImage item={sheet} alt={name} fill sizes="(max-width: 700px) 100vw, 460px" /></div>
         <div className="sheet-body">
           <h2><VegMark /> {name}</h2>
           <p className="price-lg">{rupees(sheet.pricePaise)}</p>

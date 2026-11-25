@@ -32,6 +32,11 @@ services:
       - key: SALESFORCE_INBOUND_KEY
         generateValue: true
       # Razorpay TEST-mode keys: enter the values in the Render dashboard, never commit them.
+      # Google sign-in: the OAuth client ID (public). Chat identity: RS256 private key, dashboard only, never committed.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: CHAT_JWT_PRIVATE_KEY
+        sync: false
       - key: PAYMENT_PROVIDER
         value: razorpay
       - key: RAZORPAY_KEY_ID

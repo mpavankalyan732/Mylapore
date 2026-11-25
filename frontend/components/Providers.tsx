@@ -19,7 +19,7 @@ const CartContext = createContext<CartCtx>(null as never);
 export const useCart = () => useContext(CartContext);
 
 // ---------------------------------------------------------------- auth
-interface AuthCtx { user: AuthUser | null; ready: boolean; setSession: (token: string, user: AuthUser) => void; logout: () => void }
+interface AuthCtx { user: AuthUser | null; ready: boolean; setSession: (token: string, user: AuthUser) => void; logout: () => void; welcome: string | null; dismissWelcome: () => void }
 const AuthContext = createContext<AuthCtx>(null as never);
 export const useAuth = () => useContext(AuthContext);
 
@@ -48,6 +48,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [welcome, setWelcome] = useState<string | null>(null); // set by a fresh sign-in only, so a page refresh never repeats it
   const [theme, setTheme] = useState<Theme>('light');
   const [cfg, setCfg] = useState<PublicConfig | null>(null);
   const [menu, setMenu] = useState<Category[]>([]);
@@ -111,10 +112,12 @@ export default function Providers({ children }: { children: ReactNode }) {
   const authValue = useMemo<AuthCtx>(
     () => ({
       user, ready,
-      setSession: (token, u) => { try { localStorage.setItem(TOKEN_KEY, token); } catch {} setUser(u); },
-      logout: () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} setUser(null); },
+      setSession: (token, u) => { try { localStorage.setItem(TOKEN_KEY, token); } catch {} setUser(u); setWelcome(u.firstName || null); },
+      logout: () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} setUser(null); setWelcome(null); },
+      welcome,
+      dismissWelcome: () => setWelcome(null),
     }),
-    [user, ready],
+    [user, ready, welcome],
   );
 
   const themeValue = useMemo(

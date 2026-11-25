@@ -8,6 +8,8 @@ import CategoryBar from '@/components/CategoryBar';
 import Footer from '@/components/Footer';
 import FloatingCart from '@/components/FloatingCart';
 import Header from '@/components/Header';
+import ChatIdentity from '@/components/ChatIdentity';
+import WelcomeToast from '@/components/WelcomeToast';
 import ItemSheet from '@/components/ItemSheet';
 import LocationModal from '@/components/LocationModal';
 import Providers from '@/components/Providers';
@@ -45,6 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <a href="#main" className="skip">Skip to content</a>
           <Header />
+          <WelcomeToast />
+          <ChatIdentity />
           <Suspense fallback={null}><CategoryBar /></Suspense>
           <main id="main">{children}</main>
           <Footer />

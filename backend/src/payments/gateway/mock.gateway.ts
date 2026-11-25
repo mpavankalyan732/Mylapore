@@ -8,6 +8,7 @@ import { header, verifyHmacHex } from './hmac';
 @Injectable()
 export class MockGateway implements PaymentGateway {
   readonly name = 'mock';
+  readonly configured = true;
   constructor(private readonly config: ConfigService) {}
 
   async createCheckout(i: CheckoutInput): Promise<CheckoutResult> {

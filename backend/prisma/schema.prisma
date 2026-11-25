@@ -138,10 +138,22 @@ model Order {
   confirmedAt      DateTime?
   items            OrderItem[]
   payments         Payment[]
+  statusEvents     OrderStatusEvent[]
 
   @@index([status, createdAt])
   @@index([customerId, createdAt])
   @@index([userId, createdAt])
+}
+
+/// One row per genuine status change, with the time it happened. The tracker shows these timestamps; nothing is inferred from a clock.
+model OrderStatusEvent {
+  id      String      @id @default(uuid())
+  orderId String
+  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status  OrderStatus
+  at      DateTime    @default(now())
+
+  @@index([orderId, at])
 }
 
 model OrderItem {

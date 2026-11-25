@@ -72,3 +72,23 @@ describe('server-side totals', () => {
     });
   });
 });
+
+describe('online payment availability', () => {
+  const mk = (o: Record<string, string>) => new RazorpayGateway({ get: (k: string) => o[k] } as unknown as ConfigService);
+  it('is unavailable until the key id, key secret and webhook secret are all set', () => {
+    expect(mk({}).configured).toBe(false);
+    expect(mk({ RAZORPAY_KEY_ID: 'a', RAZORPAY_KEY_SECRET: 'b' }).configured).toBe(false);
+    expect(mk({ RAZORPAY_KEY_ID: 'a', RAZORPAY_KEY_SECRET: 'b', RAZORPAY_WEBHOOK_SECRET: 'c' }).configured).toBe(true);
+  });
+  it('PaymentsService refuses an online order up front when the provider is not configured', () => {
+    const svc = Object.create(PaymentsService.prototype) as unknown as { onlineAvailable: boolean; assertOnlineAvailable(): void } & Record<string, unknown>;
+    const set = (k: string, v: unknown) => Object.defineProperty(svc, k, { value: v, configurable: true, writable: true });
+    set('gateways', { razorpay: mk({}) });
+    set('config', { get: (k: string) => ({ PAYMENT_PROVIDER: 'razorpay' })[k] });
+    expect(svc.onlineAvailable).toBe(false);
+    expect(() => svc.assertOnlineAvailable()).toThrow(/temporarily unavailable/);
+    set('gateways', { razorpay: mk({ RAZORPAY_KEY_ID: 'a', RAZORPAY_KEY_SECRET: 'b', RAZORPAY_WEBHOOK_SECRET: 'c' }) });
+    expect(svc.onlineAvailable).toBe(true);
+    expect(() => svc.assertOnlineAvailable()).not.toThrow();
+  });
+});

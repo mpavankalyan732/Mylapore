@@ -13,6 +13,10 @@ export class RazorpayGateway implements PaymentGateway {
   readonly name = 'razorpay';
   constructor(private readonly config: ConfigService) {}
 
+  get configured() {
+    return !!this.config.get<string>('RAZORPAY_KEY_ID') && !!this.config.get<string>('RAZORPAY_KEY_SECRET') && !!this.config.get<string>('RAZORPAY_WEBHOOK_SECRET');
+  }
+
   /** Fetch the authoritative Payment Link state from Razorpay (server-to-server). */
   async fetchPaymentLink(reference: string): Promise<PaymentLinkStatus> {
     const id = this.config.get<string>('RAZORPAY_KEY_ID');

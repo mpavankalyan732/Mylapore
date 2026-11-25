@@ -13,7 +13,7 @@ export interface MenuItem {
 export interface ItemDetail extends MenuItem { category: { slug: string; names: Names } }
 export interface AuthUser { id: string; firstName: string; lastName: string; email: string | null; phone: string | null }
 export interface Category { id: string; slug: string; names: Names; items: MenuItem[] }
-export interface PublicConfig { taxPercent: number; deliveryFeePaise: number; codEnabled: boolean; paymentProvider: string; servicePincodes: string[]; googleClientId: string | null }
+export interface PublicConfig { taxPercent: number; deliveryFeePaise: number; codEnabled: boolean; paymentProvider: string; onlinePaymentAvailable?: boolean; orderDemoMode?: boolean; servicePincodes: string[]; googleClientId: string | null }
 
 export class ApiError extends Error {
   constructor(public status: number, public body: any) {

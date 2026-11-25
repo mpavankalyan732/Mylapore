@@ -1,6 +1,6 @@
 'use client';
 import { FormEvent, KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
+import DishImage from './DishImage';
 import { useRouter } from 'next/navigation';
 import { rupees } from '@/lib/api';
 import { SearchIcon } from './Icons';
@@ -60,7 +60,7 @@ export default function SearchBox() {
           {results.map(({ i, cat }, idx) => (
             <li key={i.id} id={`${listId}-${idx}`} role="option" aria-selected={idx === active}>
               <button type="button" className={idx === active ? 'on' : ''} onMouseEnter={() => setActive(idx)} onClick={() => choose(idx)}>
-                <span className="s-img"><Image src={i.imageUrl} alt="" width={44} height={44} /></span>
+                <span className="s-img"><DishImage item={i} alt="" width={44} height={44} /></span>
                 <span className="s-txt"><b>{pick(i.names)}</b><small>{cat}</small></span>
                 <span className="s-price">{rupees(i.pricePaise)}</span>
               </button>

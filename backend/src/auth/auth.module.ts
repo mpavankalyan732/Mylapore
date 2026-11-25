@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Headers, HttpCode, Module, Post, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Module, NotFoundException, Post, UnauthorizedException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { IsNotEmpty, IsString, Length, MaxLength, MinLength } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { AuthService, publicUser } from './auth.service';
+import { ChatIdentity } from './chat-identity';
 
 class RegisterDto {
   @IsString() @IsNotEmpty() @MaxLength(40) firstName: string;
@@ -60,7 +62,19 @@ class AuthController {
 @ApiTags('me')
 @Controller('me')
 class MeController {
-  constructor(private readonly auth: AuthService, private readonly prisma: PrismaService) {}
+  private readonly chat: ChatIdentity;
+  constructor(private readonly auth: AuthService, private readonly prisma: PrismaService, config: ConfigService) {
+    this.chat = new ChatIdentity(config);
+  }
+
+  /** Short-lived signed identity for the Salesforce chat. 404 until CHAT_JWT_PRIVATE_KEY is set. Only for a signed-in customer. */
+  @Get('chat-identity')
+  async chatIdentity(@Headers('authorization') authz?: string) {
+    if (!this.chat.enabled) throw new NotFoundException();
+    const user = await this.auth.userFromHeader(authz);
+    if (!user) throw new UnauthorizedException();
+    return this.chat.sign(user);
+  }
 
   /** Orders placed while signed in. Includes the tracking token because the caller owns these orders. */
   @Get('orders')
@@ -78,5 +92,19 @@ class MeController {
   }
 }
 
-@Module({ controllers: [AuthController, MeController], providers: [AuthService], exports: [AuthService] })
+/** Public keys Salesforce uses to verify chat identity tokens. Contains no secret. */
+@ApiTags('auth')
+@Controller('.well-known')
+class WellKnownController {
+  private readonly chat: ChatIdentity;
+  constructor(config: ConfigService) {
+    this.chat = new ChatIdentity(config);
+  }
+  @Get('chat-jwks.json')
+  jwks() {
+    return this.chat.jwks();
+  }
+}
+
+@Module({ controllers: [AuthController, MeController, WellKnownController], providers: [AuthService], exports: [AuthService] })
 export class AuthModule {}

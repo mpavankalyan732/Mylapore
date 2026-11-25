@@ -1,5 +1,5 @@
 'use client';
-import Image from 'next/image';
+import DishImage from './DishImage';
 import { useState } from 'react';
 import { ItemDetail, rupees } from '@/lib/api';
 import { VegMark } from './Header';
@@ -22,7 +22,7 @@ export default function ItemPanel({ item }: { item: ItemDetail }) {
     <div className="item-grid">
       <div>
         <button className="item-photo" onClick={() => setZoom(true)} aria-label={`Click to zoom: ${name}`}>
-          <Image src={item.imageUrl} alt={name} fill priority sizes="(max-width: 900px) 100vw, 560px" />
+          <DishImage item={item} alt={name} fill priority sizes="(max-width: 900px) 100vw, 560px" />
           <span className="zoom-hint">Click to zoom</span>
         </button>
         <blockquote className="item-quote">“Authentic South Indian flavours, cooked fresh and 100% vegetarian.”<cite>Mylapore Restaurant</cite></blockquote>
@@ -79,7 +79,7 @@ export default function ItemPanel({ item }: { item: ItemDetail }) {
       {zoom && (
         <div className="lightbox" role="dialog" aria-modal="true" aria-label={name} onClick={() => setZoom(false)}>
           <button className="lb-close" onClick={() => setZoom(false)} aria-label="Close"><CloseIcon /></button>
-          <div className="lb-img" onClick={(e) => e.stopPropagation()}><Image src={item.imageUrl} alt={name} fill sizes="90vw" /></div>
+          <div className="lb-img" onClick={(e) => e.stopPropagation()}><DishImage item={item} alt={name} fill sizes="90vw" /></div>
         </div>
       )}
     </div>

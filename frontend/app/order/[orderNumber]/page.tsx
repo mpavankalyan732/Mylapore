@@ -3,19 +3,23 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { io } from 'socket.io-client';
 import { api, getOrderToken, isSafeCheckoutUrl, rupees, saveOrderToken, WS_URL } from '@/lib/api';
-import { useLang } from '@/components/Providers';
+import { useLang, useShop } from '@/components/Providers';
 import type { Key } from '@/lib/i18n';
 
 interface OrderView {
   orderNumber: string; status: string; paymentStatus: string; paymentMethod: string; totalPaise: number; checkoutUrl?: string;
   items: { name: string; quantity: number; lineTotalPaise: number }[];
+  /** Real status changes with their times, from the backend. */
+  timeline?: { status: string; at: string }[];
 }
 const STEPS = ['CONFIRMED', 'PREPARING', 'READY', 'COMPLETED'];
+const fmtTime = (iso?: string) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
 
 function Tracker() {
   const { orderNumber } = useParams<{ orderNumber: string }>();
   const q = useSearchParams();
   const { t } = useLang();
+  const { cfg } = useShop();
   const [order, setOrder] = useState<OrderView | null>(null);
   const [missing, setMissing] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -46,7 +50,7 @@ function Tracker() {
     const sub = () => socket.emit('order:subscribe', { orderNumber, token });
     socket.on('connect', sub);
     socket.on('order.updated', (e: { orderNumber: string }) => e.orderNumber === orderNumber && void load());
-    const poll = setInterval(() => void load(), 8000);
+    const poll = setInterval(() => void load(), 10000); // refresh only: the status itself comes from the kitchen
     return () => {
       clearInterval(poll);
       socket.disconnect();
@@ -77,11 +81,24 @@ function Tracker() {
       ) : (
         <div className="panel" aria-live="polite">
           <p className="status-now">{t(`s_${order.status}` as Key)}</p>
+          {cfg?.orderDemoMode && idx >= 0 && order.status !== 'COMPLETED' && (
+            <p className="muted small" role="note">Demo mode: this order moves to the next step automatically every few seconds.</p>
+          )}
           {idx >= 0 && (
             <ol className="steps">
-              {STEPS.map((s, i) => (
-                <li key={s} className={i <= idx ? 'done' : ''}>{t(`s_${s}` as Key)}</li>
-              ))}
+              {STEPS.map((s, i) => {
+                // The time is the real moment the backend recorded this step, never a guess.
+                const at = order.timeline?.find((e) => e.status === s)?.at;
+                const state = i < idx ? 'done' : i === idx ? 'done current' : '';
+                return (
+                  <li key={s} className={state} aria-current={i === idx ? 'step' : undefined}>
+                    <span className="step-mark" aria-hidden="true">{i <= idx ? '✓' : ''}</span>
+                    <span className="step-name">{t(`s_${s}` as Key)}</span>
+                    {at && <time className="step-time" dateTime={at}>{fmtTime(at)}</time>}
+                    <span className="sr-only">{i < idx ? ' (completed)' : i === idx ? ' (current)' : ' (pending)'}</span>
+                  </li>
+                );
+              })}
             </ol>
           )}
         </div>

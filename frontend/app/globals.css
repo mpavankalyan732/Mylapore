@@ -218,3 +218,19 @@ label { display: grid; gap: 5px; font-weight: 500; font-size: .92rem; }
 .reveal { opacity: 0; transform: translateY(20px); transition: opacity .7s cubic-bezier(.2, .7, .2, 1), transform .7s cubic-bezier(.2, .7, .2, 1); } .reveal.in { opacity: 1; transform: none; }
 @media (scripting: none) { .reveal { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } .reveal { opacity: 1; transform: none; } }
+
+/* order tracker: real timestamps, check marks, current step highlighted */
+.steps li { display: flex; flex-direction: column; align-items: center; gap: 2px; transition: background .4s ease, color .4s ease, transform .3s ease; }
+.steps li .step-mark { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 2px solid currentColor; font-size: .75rem; line-height: 1; opacity: .7; }
+.steps li.done .step-mark { background: #fff; color: var(--green); border-color: #fff; opacity: 1; }
+.steps li.current { box-shadow: 0 0 0 3px rgba(22, 130, 60, .25); transform: translateY(-1px); font-weight: 700; }
+.steps li .step-time { font-size: .7rem; opacity: .9; }
+@media (max-width: 520px) { .steps { flex-direction: column; } .steps li { flex-direction: row; justify-content: flex-start; text-align: left; gap: 10px; } }
+@media (prefers-reduced-motion: reduce) { .steps li { transition: none; } }
+
+/* welcome popup */
+.welcome-toast { position: fixed; z-index: 60; top: 72px; right: 16px; max-width: min(360px, calc(100vw - 32px)); background: var(--surface, #fff); color: inherit; border: 1px solid var(--border, #e5e7eb); border-left: 4px solid var(--green); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.15); padding: 14px 16px; animation: toast-in .35s ease both; }
+.welcome-toast strong { display: block; }
+.welcome-toast button { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 1.1rem; cursor: pointer; color: inherit; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .welcome-toast { animation: none; } }

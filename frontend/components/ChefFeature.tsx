@@ -1,5 +1,5 @@
 'use client';
-import Image from 'next/image';
+import DishImage from './DishImage';
 import { MenuItem, rupees } from '@/lib/api';
 import { VegMark } from './Header';
 import { useLang } from './Providers';
@@ -11,7 +11,7 @@ export default function ChefFeature({ item, label, flip = false }: { item: MenuI
   return (
     <div className={`feature-card ${flip ? 'flip' : ''}`}>
       <div className="feature-photo">
-        <Image src={item.imageUrl} alt={pick(item.names)} fill sizes="(max-width: 900px) 100vw, 560px" />
+        <DishImage item={item} alt={pick(item.names)} fill sizes="(max-width: 900px) 100vw, 560px" />
       </div>
       <div className="feature-body">
         <span className="eyebrow">{label ?? t('chefs_special')}</span>

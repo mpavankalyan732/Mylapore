@@ -7,6 +7,7 @@ import {
   NotFoundException,
   OnModuleDestroy,
   OnModuleInit,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -45,6 +46,19 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
   }
   private get isProd() {
     return this.config.get('NODE_ENV') === 'production';
+  }
+
+  /** True when the active provider can take a payment now (credentials set). Mock never counts in production. */
+  get onlineAvailable(): boolean {
+    const gw = this.gateways[this.activeProvider];
+    return !!gw && gw.configured && !(gw.name === 'mock' && this.isProd);
+  }
+
+  /** Called BEFORE an online order is created, so a payment outage never leaves an unpaid order behind. */
+  assertOnlineAvailable() {
+    if (!this.onlineAvailable) {
+      throw new ServiceUnavailableException({ code: 'PAYMENT_UNAVAILABLE', message: 'Online payment is temporarily unavailable. Please choose pay at counter, or try again later.' });
+    }
   }
 
   onModuleInit() {
@@ -292,7 +306,7 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
       if (order.status === 'PENDING_PAYMENT') {
         const updated = await tx.order.update({
           where: { id: order.id },
-          data: { status: 'CONFIRMED', paymentStatus: 'PAID', confirmedAt: new Date() },
+          data: { status: 'CONFIRMED', paymentStatus: 'PAID', confirmedAt: new Date(), statusEvents: { create: { status: 'CONFIRMED' } } },
           include: { customer: true },
         });
         await this.outbox.enqueue(tx, 'ORDER', order.id, 'ORDER_CONFIRMED', this.snapshot(updated));
@@ -311,7 +325,7 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
     if (order.status !== 'PENDING_PAYMENT') return null;
     const updated = await tx.order.update({
       where: { id: order.id },
-      data: { status: to === 'EXPIRED' ? 'EXPIRED' : 'PAYMENT_FAILED', paymentStatus: to },
+      data: { status: to === 'EXPIRED' ? 'EXPIRED' : 'PAYMENT_FAILED', paymentStatus: to, statusEvents: { create: { status: to === 'EXPIRED' ? 'EXPIRED' : 'PAYMENT_FAILED' } } },
       include: { customer: true },
     });
     await this.outbox.enqueue(tx, 'ORDER', order.id, `ORDER_${updated.status}`, this.snapshot(updated));
@@ -343,6 +357,7 @@ export class PaymentsService implements OnModuleInit, OnModuleDestroy {
       await this.prisma.$transaction(async (tx) => {
         const res = await tx.order.updateMany({ where: { id: o.id, status: 'PENDING_PAYMENT' }, data: { status: 'EXPIRED', paymentStatus: 'EXPIRED' } });
         if (res.count === 0) return;
+        await tx.orderStatusEvent.create({ data: { orderId: o.id, status: 'EXPIRED' } });
         await tx.payment.updateMany({ where: { orderId: o.id, status: 'PENDING' }, data: { status: 'EXPIRED' } });
         await this.outbox.enqueue(tx, 'ORDER', o.id, 'ORDER_EXPIRED', this.snapshot({ ...o, status: 'EXPIRED', paymentStatus: 'EXPIRED' }));
       });

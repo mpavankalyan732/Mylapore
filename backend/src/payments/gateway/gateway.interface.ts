@@ -40,6 +40,8 @@ export interface PaymentLinkStatus {
 
 export interface PaymentGateway {
   readonly name: string;
+  /** False when the provider's credentials are not set, so online payment must not be offered. */
+  readonly configured: boolean;
   createCheckout(input: CheckoutInput): Promise<CheckoutResult>;
   /** Optional: single-use, fixed-amount UPI QR. */
   createQr?(input: QrInput): Promise<QrResult>;

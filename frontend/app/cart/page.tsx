@@ -51,7 +51,10 @@ export default function Checkout() {
   useEffect(() => { idemKey.current = null; }, [sig]);
 
   const cod = cfg?.codEnabled ?? true;
+  // The API says whether it can take an online payment right now; if not, only pay-at-counter is offered (no failed checkout).
+  const online = cfg?.onlinePaymentAvailable ?? true;
   useEffect(() => { if (!cod && method === 'COD') setMethod('ONLINE'); }, [cod, method]);
+  useEffect(() => { if (!online && cod && method === 'ONLINE') setMethod('COD'); }, [online, cod, method]);
 
   const tax = Math.round((subtotalPaise * (cfg?.taxPercent ?? 0)) / 100);
   const fee = fulfilment === 'DELIVERY' ? cfg?.deliveryFeePaise ?? 0 : 0;
@@ -179,10 +182,13 @@ export default function Checkout() {
           <section className="co-card" aria-labelledby="s4">
             <h2 id="s4"><span className="num">{fulfilment === 'DELIVERY' ? 4 : 3}</span> {t('co_payment')}</h2>
             <div className="opt-cards" role="radiogroup" aria-labelledby="s4">
-              <label className={`opt-card ${method === 'ONLINE' ? 'on' : ''}`}>
-                <input type="radio" name="method" checked={method === 'ONLINE'} onChange={() => setMethod('ONLINE')} />
-                <span className="oc-icon" aria-hidden="true">💳</span><span><b>{t('pay_online')}</b><small>{t('co_online_d')}</small></span>
-              </label>
+              {online && (
+                <label className={`opt-card ${method === 'ONLINE' ? 'on' : ''}`}>
+                  <input type="radio" name="method" checked={method === 'ONLINE'} onChange={() => setMethod('ONLINE')} />
+                  <span className="oc-icon" aria-hidden="true">💳</span><span><b>{t('pay_online')}</b><small>{t('co_online_d')}</small></span>
+                </label>
+              )}
+              {!online && <p className="muted" role="status">Online payment is temporarily unavailable. You can pay at the counter.</p>}
               {cod && (
                 <label className={`opt-card ${method === 'COD' ? 'on' : ''}`}>
                   <input type="radio" name="method" checked={method === 'COD'} onChange={() => setMethod('COD')} />

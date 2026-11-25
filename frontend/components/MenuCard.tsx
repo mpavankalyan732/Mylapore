@@ -1,5 +1,5 @@
 'use client';
-import Image from 'next/image';
+import DishImage from './DishImage';
 import Link from 'next/link';
 import { MouseEvent } from 'react';
 import { MenuItem, rupees } from '@/lib/api';
@@ -23,7 +23,7 @@ export default function MenuCard({ item, priority = false }: { item: MenuItem; p
     <article className={`card ${item.isAvailable ? '' : 'card-off'}`}>
       <div className="card-media">
         <Link href={`/menu/${item.slug}`} className="card-img" onClick={open}>
-          <Image src={item.imageUrl} alt={name} fill priority={priority} sizes="(max-width: 600px) 60vw, (max-width: 1000px) 33vw, 230px" />
+          <DishImage item={item} alt={name} fill priority={priority} sizes="(max-width: 600px) 60vw, (max-width: 1000px) 33vw, 230px" />
           <span className="img-shade" aria-hidden="true" />
           {item.isBestseller && <span className="ribbon">★ {t('bestseller')}</span>}
         </Link>
