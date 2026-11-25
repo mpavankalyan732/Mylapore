@@ -14,7 +14,9 @@ export class RazorpayGateway implements PaymentGateway {
   constructor(private readonly config: ConfigService) {}
 
   get configured() {
-    return !!this.config.get<string>('RAZORPAY_KEY_ID') && !!this.config.get<string>('RAZORPAY_KEY_SECRET') && !!this.config.get<string>('RAZORPAY_WEBHOOK_SECRET');
+    // The key pair is what creates a payment link. The webhook secret is optional: without it, payment is confirmed by
+    // reconciling with Razorpay while the customer's order page polls (see the status endpoint), so it must not block checkout.
+    return !!this.config.get<string>('RAZORPAY_KEY_ID') && !!this.config.get<string>('RAZORPAY_KEY_SECRET');
   }
 
   /** Fetch the authoritative Payment Link state from Razorpay (server-to-server). */
